@@ -1,0 +1,37 @@
+Package: xdtkit
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Emma", "Skarstein",
+      email = "emma.skarstein@vegvesen.no",
+      role = c("aut", "cre")
+    )
+  )
+Description: More about what it does (maybe more than one line).
+    Continuation lines should be indented.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends: 
+    R (>= 3.5)
+RoxygenNote: 7.3.2
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Imports: 
+    dplyr,
+    forcats,
+    Hmisc,
+    httr,
+    igraph,
+    INLA,
+    jsonlite,
+    Matrix,
+    purrr,
+    sf,
+    stats,
+    tidyr,
+    scales,
+    ggplot2

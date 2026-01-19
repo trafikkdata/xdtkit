@@ -1,0 +1,358 @@
+﻿kommunenummer;kommunenavn;fylke
+0301;Oslo;Oslo
+3101;Halden;Østfold
+3103;Moss;Østfold
+3105;Sarpsborg;Østfold
+3107;Fredrikstad;Østfold
+3110;Hvaler;Østfold
+3112;Råde;Østfold
+3114;Våler;Østfold
+3116;Skiptvet;Østfold
+3118;Indre Østfold;Østfold
+3120;Rakkestad;Østfold
+3122;Marker;Østfold
+3124;Aremark;Østfold
+3201;Bærum;Akershus
+3203;Asker;Akershus
+3205;Lillestrøm;Akershus
+3207;Nordre Follo;Akershus
+3209;Ullensaker;Akershus
+3212;Nesodden;Akershus
+3214;Frogn;Akershus
+3216;Vestby;Akershus
+3218;Ås;Akershus
+3220;Enebakk;Akershus
+3222;Lørenskog;Akershus
+3224;Rælingen;Akershus
+3226;Aurskog-Høland;Akershus
+3228;Nes;Akershus
+3230;Gjerdrum;Akershus
+3232;Nittedal;Akershus
+3234;Lunner;Akershus
+3236;Jevnaker;Akershus
+3238;Nannestad;Akershus
+3240;Eidsvoll;Akershus
+3242;Hurdal;Akershus
+3301;Drammen;Buskerud
+3303;Kongsberg;Buskerud
+3305;Ringerike;Buskerud
+3310;Hole;Buskerud
+3312;Lier;Buskerud
+3314;Øvre Eiker;Buskerud
+3316;Modum;Buskerud
+3318;Krødsherad;Buskerud
+3320;Flå;Buskerud
+3322;Nesbyen;Buskerud
+3324;Gol;Buskerud
+3326;Hemsedal;Buskerud
+3328;Ål;Buskerud
+3330;Hol;Buskerud
+3332;Sigdal;Buskerud
+3334;Flesberg;Buskerud
+3336;Rollag;Buskerud
+3338;Nore og Uvdal;Buskerud
+3401;Kongsvinger;Innlandet
+3403;Hamar;Innlandet
+3405;Lillehammer;Innlandet
+3407;Gjøvik;Innlandet
+3411;Ringsaker;Innlandet
+3412;Løten;Innlandet
+3413;Stange;Innlandet
+3414;Nord-Odal;Innlandet
+3415;Sør-Odal;Innlandet
+3416;Eidskog;Innlandet
+3417;Grue;Innlandet
+3418;Åsnes;Innlandet
+3419;Våler;Innlandet
+3420;Elverum;Innlandet
+3421;Trysil;Innlandet
+3422;Åmot;Innlandet
+3423;Stor-Elvdal;Innlandet
+3424;Rendalen;Innlandet
+3425;Engerdal;Innlandet
+3426;Tolga;Innlandet
+3427;Tynset;Innlandet
+3428;Alvdal;Innlandet
+3429;Folldal;Innlandet
+3430;Os;Innlandet
+3431;Dovre;Innlandet
+3432;Lesja;Innlandet
+3433;Skjåk;Innlandet
+3434;Lom;Innlandet
+3435;Vågå;Innlandet
+3436;Nord-Fron;Innlandet
+3437;Sel;Innlandet
+3438;Sør-Fron;Innlandet
+3439;Ringebu;Innlandet
+3440;Øyer;Innlandet
+3441;Gausdal;Innlandet
+3442;Østre Toten;Innlandet
+3443;Vestre Toten;Innlandet
+3446;Gran;Innlandet
+3447;Søndre Land;Innlandet
+3448;Nordre Land;Innlandet
+3449;Sør-Aurdal;Innlandet
+3450;Etnedal;Innlandet
+3451;Nord-Aurdal;Innlandet
+3452;Vestre Slidre;Innlandet
+3453;Øystre Slidre;Innlandet
+3454;Vang;Innlandet
+3901;Horten;Vestfold
+3903;Holmestrand;Vestfold
+3905;Tønsberg;Vestfold
+3907;Sandefjord;Vestfold
+3909;Larvik;Vestfold
+3911;Færder;Vestfold
+4001;Porsgrunn;Telemark
+4003;Skien;Telemark
+4005;Notodden;Telemark
+4010;Siljan;Telemark
+4012;Bamble;Telemark
+4014;Kragerø;Telemark
+4016;Drangedal;Telemark
+4018;Nome;Telemark
+4020;Midt-Telemark;Telemark
+4022;Seljord;Telemark
+4024;Hjartdal;Telemark
+4026;Tinn;Telemark
+4028;Kviteseid;Telemark
+4030;Nissedal;Telemark
+4032;Fyresdal;Telemark
+4034;Tokke;Telemark
+4036;Vinje;Telemark
+4201;Risør;Agder
+4202;Grimstad;Agder
+4203;Arendal;Agder
+4204;Kristiansand;Agder
+4205;Lindesnes;Agder
+4206;Farsund;Agder
+4207;Flekkefjord;Agder
+4211;Gjerstad;Agder
+4212;Vegårshei;Agder
+4213;Tvedestrand;Agder
+4214;Froland;Agder
+4215;Lillesand;Agder
+4216;Birkenes;Agder
+4217;Åmli;Agder
+4218;Iveland;Agder
+4219;Evje og Hornnes;Agder
+4220;Bygland;Agder
+4221;Valle;Agder
+4222;Bykle;Agder
+4223;Vennesla;Agder
+4224;Åseral;Agder
+4225;Lyngdal;Agder
+4226;Hægebostad;Agder
+4227;Kvinesdal;Agder
+4228;Sirdal;Agder
+1101;Eigersund;Rogaland
+1103;Stavanger;Rogaland
+1106;Haugesund;Rogaland
+1108;Sandnes;Rogaland
+1111;Sokndal;Rogaland
+1112;Lund;Rogaland
+1114;Bjerkreim;Rogaland
+1119;Hå;Rogaland
+1120;Klepp;Rogaland
+1121;Time;Rogaland
+1122;Gjesdal;Rogaland
+1124;Sola;Rogaland
+1127;Randaberg;Rogaland
+1130;Strand;Rogaland
+1133;Hjelmeland;Rogaland
+1134;Suldal;Rogaland
+1135;Sauda;Rogaland
+1144;Kvitsøy;Rogaland
+1145;Bokn;Rogaland
+1146;Tysvær;Rogaland
+1149;Karmøy;Rogaland
+1151;Utsira;Rogaland
+1160;Vindafjord;Rogaland
+4601;Bergen;Vestland
+4602;Kinn;Vestland
+4611;Etne;Vestland
+4612;Sveio;Vestland
+4613;Bømlo;Vestland
+4614;Stord;Vestland
+4615;Fitjar;Vestland
+4616;Tysnes;Vestland
+4617;Kvinnherad;Vestland
+4618;Ullensvang;Vestland
+4619;Eidfjord;Vestland
+4620;Ulvik;Vestland
+4621;Voss;Vestland
+4622;Kvam;Vestland
+4623;Samnanger;Vestland
+4624;Bjørnafjorden;Vestland
+4625;Austevoll;Vestland
+4626;Øygarden;Vestland
+4627;Askøy;Vestland
+4628;Vaksdal;Vestland
+4629;Modalen;Vestland
+4630;Osterøy;Vestland
+4631;Alver;Vestland
+4632;Austrheim;Vestland
+4633;Fedje;Vestland
+4634;Masfjorden;Vestland
+4635;Gulen;Vestland
+4636;Solund;Vestland
+4637;Hyllestad;Vestland
+4638;Høyanger;Vestland
+4639;Vik;Vestland
+4640;Sogndal;Vestland
+4641;Aurland;Vestland
+4642;Lærdal;Vestland
+4643;Årdal;Vestland
+4644;Luster;Vestland
+4645;Askvoll;Vestland
+4646;Fjaler;Vestland
+4647;Sunnfjord;Vestland
+4648;Bremanger;Vestland
+4649;Stad;Vestland
+4650;Gloppen;Vestland
+4651;Stryn;Vestland
+1505;Kristiansund;Møre og Romsdal
+1506;Molde;Møre og Romsdal
+1508;Ålesund;Møre og Romsdal
+1511;Vanylven;Møre og Romsdal
+1514;Sande;Møre og Romsdal
+1515;Herøy;Møre og Romsdal
+1516;Ulstein;Møre og Romsdal
+1517;Hareid;Møre og Romsdal
+1520;Ørsta;Møre og Romsdal
+1525;Stranda;Møre og Romsdal
+1528;Sykkylven;Møre og Romsdal
+1531;Sula;Møre og Romsdal
+1532;Giske;Møre og Romsdal
+1535;Vestnes;Møre og Romsdal
+1539;Rauma;Møre og Romsdal
+1547;Aukra;Møre og Romsdal
+1554;Averøy;Møre og Romsdal
+1557;Gjemnes;Møre og Romsdal
+1560;Tingvoll;Møre og Romsdal
+1563;Sunndal;Møre og Romsdal
+1566;Surnadal;Møre og Romsdal
+1573;Smøla;Møre og Romsdal
+1576;Aure;Møre og Romsdal
+1577;Volda;Møre og Romsdal
+1578;Fjord;Møre og Romsdal
+1579;Hustadvika;Møre og Romsdal
+1580;Haram;Møre og Romsdal
+5001;Trondheim;Trøndelag
+5006;Steinkjer;Trøndelag
+5007;Namsos;Trøndelag
+5014;Frøya;Trøndelag
+5020;Osen;Trøndelag
+5021;Oppdal;Trøndelag
+5022;Rennebu;Trøndelag
+5025;Røros;Trøndelag
+5026;Holtålen;Trøndelag
+5027;Midtre Gauldal;Trøndelag
+5028;Melhus;Trøndelag
+5029;Skaun;Trøndelag
+5031;Malvik;Trøndelag
+5032;Selbu;Trøndelag
+5033;Tydal;Trøndelag
+5034;Meråker;Trøndelag
+5035;Stjørdal;Trøndelag
+5036;Frosta;Trøndelag
+5037;Levanger;Trøndelag
+5038;Verdal;Trøndelag
+5041;Snåsa;Trøndelag
+5042;Lierne;Trøndelag
+5043;Røyrvik;Trøndelag
+5044;Namsskogan;Trøndelag
+5045;Grong;Trøndelag
+5046;Høylandet;Trøndelag
+5047;Overhalla;Trøndelag
+5049;Flatanger;Trøndelag
+5052;Leka;Trøndelag
+5053;Inderøy;Trøndelag
+5054;Indre Fosen;Trøndelag
+5055;Heim;Trøndelag
+5056;Hitra;Trøndelag
+5057;Ørland;Trøndelag
+5058;Åfjord;Trøndelag
+5059;Orkland;Trøndelag
+5060;Nærøysund;Trøndelag
+5061;Rindal;Trøndelag
+1804;Bodø;Nordland
+1806;Narvik;Nordland
+1811;Bindal;Nordland
+1812;Sømna;Nordland
+1813;Brønnøy;Nordland
+1815;Vega;Nordland
+1816;Vevelstad;Nordland
+1818;Herøy;Nordland
+1820;Alstahaug;Nordland
+1822;Leirfjord;Nordland
+1824;Vefsn;Nordland
+1825;Grane;Nordland
+1826;Hattfjelldal;Nordland
+1827;Dønna;Nordland
+1828;Nesna;Nordland
+1832;Hemnes;Nordland
+1833;Rana;Nordland
+1834;Lurøy;Nordland
+1835;Træna;Nordland
+1836;Rødøy;Nordland
+1837;Meløy;Nordland
+1838;Gildeskål;Nordland
+1839;Beiarn;Nordland
+1840;Saltdal;Nordland
+1841;Fauske;Nordland
+1845;Sørfold;Nordland
+1848;Steigen;Nordland
+1851;Lødingen;Nordland
+1853;Evenes;Nordland
+1856;Røst;Nordland
+1857;Værøy;Nordland
+1859;Flakstad;Nordland
+1860;Vestvågøy;Nordland
+1865;Vågan;Nordland
+1866;Hadsel;Nordland
+1867;Bø;Nordland
+1868;Øksnes;Nordland
+1870;Sortland;Nordland
+1871;Andøy;Nordland
+1874;Moskenes;Nordland
+1875;Hamarøy;Nordland
+5501;Tromsø;Troms
+5503;Harstad;Troms
+5510;Kvæfjord;Troms
+5512;Tjeldsund;Troms
+5514;Ibestad;Troms
+5516;Gratangen;Troms
+5518;Lavangen;Troms
+5520;Bardu;Troms
+5522;Salangen;Troms
+5524;Målselv;Troms
+5526;Sørreisa;Troms
+5528;Dyrøy;Troms
+5530;Senja;Troms
+5532;Balsfjord;Troms
+5534;Karlsøy;Troms
+5536;Lyngen;Troms
+5538;Storfjord;Troms
+5540;Kåfjord;Troms
+5542;Skjervøy;Troms
+5544;Nordreisa;Troms
+5546;Kvænangen;Troms
+5601;Alta;Finnmark
+5603;Hammerfest;Finnmark
+5605;Sør-Varanger;Finnmark
+5607;Vadsø;Finnmark
+5610;Karasjok;Finnmark
+5612;Kautokeino;Finnmark
+5614;Loppa;Finnmark
+5616;Hasvik;Finnmark
+5618;Måsøy;Finnmark
+5620;Nordkapp;Finnmark
+5622;Porsanger;Finnmark
+5624;Lebesby;Finnmark
+5626;Gamvik;Finnmark
+5628;Tana;Finnmark
+5630;Berlevåg;Finnmark
+5632;Båtsfjord;Finnmark
+5634;Vardø;Finnmark
+5636;Nesseby;Finnmark
