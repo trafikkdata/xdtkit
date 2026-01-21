@@ -10,7 +10,7 @@
 #'   the bus stop count represents the assigned traffic link.
 #'   Named vector with entries "High", "Medium", and "Low", for example c(High = 0.1, Medium = 0.2, Low = 0.3)
 #'
-#' @return Data frame with columns: id, parentTrafficLinkId, stopPointRef, bus_aadt, bus_sd, stopCertainty
+#' @return Data frame with columns: id, stopPointRef, bus_aadt, bus_sd, stopCertainty
 #' @export
 calculate_bus_aadt <- function(stops_on_traffic_links_data,
                                bus_counts_data,
@@ -24,8 +24,8 @@ calculate_bus_aadt <- function(stops_on_traffic_links_data,
 
   # Prepare stop-to-link mapping (handle multiple stops per link)
   stops_expanded <- stops_on_traffic_links_data |>
-    dplyr::select(id, parentTrafficLinkId, stopPointRef, stopCertainty,
-                  stopsServeDifferentBuses) |>
+    dplyr::select(id, stopPointRef, stopCertainty,
+                  stopsServeDifferentBuses, stopAggregatesDirections) |>
     dplyr::mutate(stopPointRef = strsplit(stopPointRef, ", ")) |>
     tidyr::unnest(cols = stopPointRef) |>
     dplyr::mutate(stopPointRef = trimws(stopPointRef)) |>
@@ -34,10 +34,11 @@ calculate_bus_aadt <- function(stops_on_traffic_links_data,
   # Join with bus counts and aggregate to link level
   bus_aadt <- stops_expanded |>
     dplyr::left_join(bus_counts_data, by = "stopPointRef") |>
-    dplyr::group_by(id, parentTrafficLinkId) |>
+    dplyr::group_by(id) |>
     dplyr::summarise(
       stopCertainty = dplyr::first(stopCertainty),
       stopsServeDifferentBuses = dplyr::first(stopsServeDifferentBuses),
+      stopAggregatesDirections = dplyr::first(stopAggregatesDirections),
       stopPointRef = dplyr::first(stopPointRef),
       n_stops = dplyr::n(),
       total_buses = sum(no_of_buses, na.rm = TRUE),
@@ -48,19 +49,19 @@ calculate_bus_aadt <- function(stops_on_traffic_links_data,
     dplyr::mutate(
       # Determine aggregation method
       bus_aadt = calculate_aggregated_aadt(
-        stopsServeDifferentBuses, total_buses, mean_buses, days_in_year
-      ),
+        stopsServeDifferentBuses, stopAggregatesDirections, total_buses, mean_buses, days_in_year
+      )#,
       # Calculate temporal uncertainty
-      bus_sd = calculate_bus_uncertainty(
-        stopsServeDifferentBuses, n_stops, sd_buses, bus_aadt,
-        days_in_year, cv_uncertainty
-      )
+      #bus_sd = calculate_bus_uncertainty(
+      #  stopsServeDifferentBuses, stopAggregatesDirections, n_stops, sd_buses, bus_aadt,
+      #  days_in_year, cv_uncertainty
+      #)
     ) |>
     # Add location uncertainty
-    add_location_uncertainty(location_uncertainties) |>
+    #add_location_uncertainty(location_uncertainties) |>
     # Remove locations with NaN AADT
     dplyr::filter(!is.nan(bus_aadt)) |>
-    dplyr::select(id, parentTrafficLinkId, stopPointRef, bus_aadt, bus_sd, stopCertainty) |>
+    dplyr::select(id, stopPointRef, bus_aadt, stopCertainty) |>
     dplyr::mutate(bus_aadt = round(bus_aadt),
                   traffic_volume_source = "Bus",
                   traffic_volume_year = year)
@@ -71,33 +72,42 @@ calculate_bus_aadt <- function(stops_on_traffic_links_data,
 
 #' Calculate Aggregated AADT from Bus Counts
 #'
-#' Determines whether to sum or average bus counts based on stop configuration.
+#' Determines whether to sum or average bus counts based on stop configuration,
+#' and adjusts for directional aggregation when needed.
 #'
 #' @param stopsServeDifferentBuses Character: "TRUE", "FALSE", or NA
+#' @param stopAggregatesDirections Logical: whether count includes both directions
 #' @param total_buses Total buses across all stops on the link
 #' @param mean_buses Mean buses per stop on the link
 #' @param days_in_year Number of collection days
-#' @return Daily average traffic volume
+#' @return Daily average traffic volume (directional)
 calculate_aggregated_aadt <- function(stopsServeDifferentBuses,
+                                      stopAggregatesDirections,
                                       total_buses,
                                       mean_buses,
                                       days_in_year) {
-  dplyr::case_when(
+  # Calculate based on stop configuration
+  aadt <- dplyr::case_when(
     # Single stop or rural (same buses): use mean
-    is.na(stopsServeDifferentBuses) | stopsServeDifferentBuses == "FALSE" ~
+    is.na(stopsServeDifferentBuses) | stopsServeDifferentBuses %in% FALSE ~
       mean_buses / days_in_year,
     # Terminal (different buses): sum all stops
-    stopsServeDifferentBuses == "TRUE" ~
+    stopsServeDifferentBuses %in% TRUE ~
       total_buses / days_in_year
   )
+
+  # Adjust for bidirectional counts
+  dplyr::if_else(stopAggregatesDirections %in% TRUE, aadt / 2, aadt)
 }
 
 
 #' Calculate Uncertainty for Bus AADT
 #'
-#' Estimates uncertainty from variation between bus stops and sample size.
+#' Estimates uncertainty from variation between bus stops and sample size,
+#' adjusting for directional aggregation when needed.
 #'
 #' @param stopsServeDifferentBuses Character: "TRUE", "FALSE", or NA
+#' @param stopAggregatesDirections Logical: whether count includes both directions
 #' @param n_stops Number of stops on the link
 #' @param sd_buses Standard deviation of bus counts across stops
 #' @param bus_aadt Estimated AADT value
@@ -105,22 +115,27 @@ calculate_aggregated_aadt <- function(stopsServeDifferentBuses,
 #' @param cv_uncertainty Coefficient of variation fallback
 #' @return Standard deviation estimate
 calculate_bus_uncertainty <- function(stopsServeDifferentBuses,
-                                           n_stops,
-                                           sd_buses,
-                                           bus_aadt,
-                                           days_in_year,
-                                           cv_uncertainty) {
-  dplyr::case_when(
+                                      stopAggregatesDirections,
+                                      n_stops,
+                                      sd_buses,
+                                      bus_aadt,
+                                      days_in_year,
+                                      cv_uncertainty) {
+  # Calculate uncertainty based on stop configuration
+  uncertainty <- dplyr::case_when(
     # Single stop: CV method
     is.na(stopsServeDifferentBuses) ~
       cv_uncertainty * bus_aadt / days_in_year,
     # Rural: use empirical SD if available, else CV
-    stopsServeDifferentBuses == "FALSE" ~
+    stopsServeDifferentBuses %in% FALSE ~
       dplyr::coalesce(sd_buses, cv_uncertainty * bus_aadt) / days_in_year,
     # Terminal: error propagation for sum
-    stopsServeDifferentBuses == "TRUE" ~
+    stopsServeDifferentBuses %in% TRUE ~
       cv_uncertainty * sqrt(n_stops) * bus_aadt / days_in_year
   )
+
+  # Adjust for bidirectional counts (dividing by 2 scales SD by 1/2)
+  dplyr::if_else(stopAggregatesDirections %in% TRUE, uncertainty / 2, uncertainty)
 }
 
 
@@ -260,7 +275,7 @@ join_bus_to_traffic <- function(df, bus_data) {
   result <- df |>
     dplyr::left_join(
       bus_data |>
-        dplyr::select(id, bus_aadt, bus_sd, stopPointRef, stopCertainty,
+        dplyr::select(id, bus_aadt, stopPointRef, stopCertainty,
                       bus_source = traffic_volume_source,
                       bus_year = traffic_volume_year),
       by = "id"
