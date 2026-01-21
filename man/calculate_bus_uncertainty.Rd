@@ -6,6 +6,7 @@
 \usage{
 calculate_bus_uncertainty(
   stopsServeDifferentBuses,
+  stopAggregatesDirections,
   n_stops,
   sd_buses,
   bus_aadt,
@@ -15,6 +16,8 @@ calculate_bus_uncertainty(
 }
 \arguments{
 \item{stopsServeDifferentBuses}{Character: "TRUE", "FALSE", or NA}
+
+\item{stopAggregatesDirections}{Logical: whether count includes both directions}
 
 \item{n_stops}{Number of stops on the link}
 
@@ -30,5 +33,6 @@ calculate_bus_uncertainty(
 Standard deviation estimate
 }
 \description{
-Estimates uncertainty from variation between bus stops and sample size.
+Estimates uncertainty from variation between bus stops and sample size,
+adjusting for directional aggregation when needed.
 }

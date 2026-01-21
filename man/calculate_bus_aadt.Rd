@@ -26,7 +26,7 @@ the bus stop count represents the assigned traffic link.
 Named vector with entries "High", "Medium", and "Low", for example c(High = 0.1, Medium = 0.2, Low = 0.3)}
 }
 \value{
-Data frame with columns: id, parentTrafficLinkId, stopPointRef, bus_aadt, bus_sd, stopCertainty
+Data frame with columns: id, stopPointRef, bus_aadt, bus_sd, stopCertainty
 }
 \description{
 Converts bus stop counts into AADT estimates on traffic links with uncertainty.

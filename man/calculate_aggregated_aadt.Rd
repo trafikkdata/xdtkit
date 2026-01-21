@@ -6,6 +6,7 @@
 \usage{
 calculate_aggregated_aadt(
   stopsServeDifferentBuses,
+  stopAggregatesDirections,
   total_buses,
   mean_buses,
   days_in_year
@@ -14,6 +15,8 @@ calculate_aggregated_aadt(
 \arguments{
 \item{stopsServeDifferentBuses}{Character: "TRUE", "FALSE", or NA}
 
+\item{stopAggregatesDirections}{Logical: whether count includes both directions}
+
 \item{total_buses}{Total buses across all stops on the link}
 
 \item{mean_buses}{Mean buses per stop on the link}
@@ -21,8 +24,9 @@ calculate_aggregated_aadt(
 \item{days_in_year}{Number of collection days}
 }
 \value{
-Daily average traffic volume
+Daily average traffic volume (directional)
 }
 \description{
-Determines whether to sum or average bus counts based on stop configuration.
+Determines whether to sum or average bus counts based on stop configuration,
+and adjusts for directional aggregation when needed.
 }
