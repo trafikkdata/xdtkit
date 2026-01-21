@@ -22,6 +22,11 @@ calculate_bus_aadt <- function(stops_on_traffic_links_data,
   date_common <- as.Date(paste0(year, "-01-01"))
   days_in_year <- Hmisc::yearDays(date_common)
 
+  # Check if stopAggregatesDirection exists
+  if(!("stopAggregatesDirection" %in% colnames(stops_on_traffic_links_data))){
+    stops_on_traffic_links_data$stopAggregatesDirections = NA
+  }
+
   # Prepare stop-to-link mapping (handle multiple stops per link)
   stops_expanded <- stops_on_traffic_links_data |>
     dplyr::select(id, stopPointRef, stopCertainty,
