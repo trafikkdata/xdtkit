@@ -26,17 +26,6 @@ plot_prediction_relative_uncertainty_histogram(
   predictions_total, cap_cv = 1, facet_by = "traffic_volume_source",
   reference_lines = c(0.125, 0.3))
 
-
-library(ggplot2)
-
-ggplot(predictions_total, aes(x = (inla_sd +1)/inla_pred,
-                              y = (balanced_sd+1)/balanced_pred)) +
-  geom_point() +
-  scale_x_log10() +
-  scale_y_log10() +
-  coord_fixed() +
-  theme_bw()
-
 # Standard deviation from INLA
 plot_prediction_uncertainty(predictions_total, cap_sd = 25000, balanced = FALSE,
                             log10_x = TRUE, log10_y = TRUE)
@@ -45,6 +34,20 @@ plot_prediction_uncertainty(predictions_total, cap_sd = 25000000,
                             log10_x = TRUE, log10_y = TRUE,
                             color_by = "functionClass")
 
+predictions_total <- predictions_total |>
+  dplyr::mutate(
+    uncertainty_total = dplyr::case_when(
+      balanced_sd/balanced_pred <= 0.2 ~ "low",
+      balanced_sd/balanced_pred <= 0.5 ~ "medium",
+      TRUE ~ "high"
+    ),
+    not_measured_low = is.na(aadt) & uncertainty_total == "low"
+  )
+
+plot_traffic_links_map(
+  predictions_total,
+  color_by = "not_measured_low"
+)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Examining heavy AADT results
