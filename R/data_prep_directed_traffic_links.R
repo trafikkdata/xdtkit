@@ -172,7 +172,7 @@ flatten_df <- function(df){
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 add_heavy_aadt <- function(df){
-  df <- df %>%
+  df <- df |>
     dplyr::mutate(heavyAadt = round(bestDataSourceAadt_heavyRatio*bestDataSourceAadt_trafficVolumeValue),
            lastYearAadt_heavyAadt = round(lastYearAadt_heavyRatio*lastYearAadt_trafficVolumeValue))
   return(df)

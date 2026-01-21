@@ -1,7 +1,7 @@
 Package: xdtkit
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
+Title: XDT kit
+Version: 2024.2.0
 Authors@R: c(
     person(
       "Emma", "Skarstein",
@@ -9,8 +9,7 @@ Authors@R: c(
       role = c("aut", "cre")
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
+Description: This package enables AADT modelling on the Norwegian road network.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
