@@ -1,7 +1,53 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Balance predictions ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+#' Balance traffic predictions using flow conservation constraints
+#'
+#' This function applies a two-stage Bayesian approach to traffic volume predictions.
+#' It takes initial INLA predictions and applies flow conservation constraints at
+#' intersections, along with measurement error modeling, to produce balanced predictions
+#' that respect network flow properties.
+#'
+#' @param data A data frame containing traffic link data with columns for traffic volumes,
+#'   predictions, and standard deviations. Must include `id` and `parentTrafficLinkId`.
+#' @param nodes A data frame of network nodes used to build the incidence matrix for
+#'   flow conservation constraints.
+#' @param balancing_grouping_variable Either a character string specifying a column name
+#'   in `data` for grouping, "run_clustering" to perform strategic network clustering,
+#'   "no_clustering" to treat all data as one group, or a data frame with cluster
+#'   assignments containing columns `id` and `cluster_id`.
+#' @param nodes_to_balance Character string specifying which nodes to include in flow
+#'   balancing. Default is "complete_nodes".
+#' @param heavy_vehicle Logical indicating whether to process heavy vehicle AADT
+#'   (TRUE) or total AADT (FALSE). Default is FALSE.
+#' @param year Integer specifying the current year for calculating measurement error
+#'   based on data age.
+#'
+#' @return A list with two elements:
+#'   \item{balanced_res}{A data frame with balanced predictions containing columns
+#'     `id`, `nduplicates`, `balanced_pred` (or `balanced_pred_heavy`), and
+#'     `balanced_sd` (or `balanced_sd_heavy`).}
+#'   \item{diagnostics}{A list containing diagnostic information including measurement
+#'     standard deviations, predictions by group, and group-specific diagnostics and
+#'     incidence matrices.}
+#'
+#' @details
+#' The function implements a Bayesian updating approach where:
+#' \itemize{
+#'   \item Initial predictions from INLA serve as the prior
+#'   \item Flow conservation constraints (incoming = outgoing traffic at nodes) are enforced
+#'   \item Measurement error is calculated based on data source, coverage, and age
+#'   \item Groups are processed independently and results are combined
+#'   \item Duplicate predictions (from overlapping clusters) are averaged with combined uncertainty
+#' }
+#'
+#' The measurement error variance represents sensor/temporal uncertainty rather than
+#' total observed variance, and is calculated using `calculate_measurement_error()`.
+#'
+#' @seealso \code{\link{balance_group_predictions}}, \code{\link{calculate_measurement_error}},
+#'   \code{\link{strategic_network_clustering}}
+#'
+#' @export
 balance_predictions <- function(data,
                                 nodes,
                                 balancing_grouping_variable,
@@ -103,6 +149,69 @@ balance_predictions <- function(data,
               diagnostics = group_diagnostics))
 }
 
+#' Balance predictions for a single group with flow conservation
+#'
+#' Performs Bayesian updating on traffic volume predictions for a single network group,
+#' enforcing flow conservation constraints at intersections and incorporating measurement
+#' uncertainty. This is the core computational function called by `balance_predictions()`.
+#'
+#' @param data A data frame containing traffic link data for a single group.
+#' @param nodes A data frame of network nodes for building the incidence matrix.
+#' @param model Optional INLA model object. If provided, predictions and standard
+#'   deviations are extracted from the model. Default is NULL.
+#' @param pred Numeric vector of initial predictions. Required if `model` is NULL.
+#' @param sd Numeric vector of prediction standard deviations. Required if `model` is NULL.
+#' @param constraint_matrix Optional pre-built incidence matrix. If NULL, the matrix
+#'   is built using `build_incidence_matrix()`. Default is NULL.
+#' @param colname_aadt Character string specifying the column name for observed AADT
+#'   values. Default is "heavyAadt".
+#' @param colname_measurement_sd Character string specifying the column name for
+#'   measurement error standard deviations. Default is "sigma_error".
+#' @param lambda Numeric regularization parameter for ill-conditioned systems.
+#'   Default is 1e-10.
+#' @param nodes_to_balance Character string specifying which nodes to balance.
+#'
+#' @return A list with three elements:
+#'   \item{results}{A data frame with columns `inla_pred`, `inla_sd`, `balanced_pred`,
+#'     and `balanced_sd` containing both initial and balanced predictions.}
+#'   \item{diagnostics}{A list containing:
+#'     \itemize{
+#'       \item `method_used`: "standard", "regularized", or "pseudoinverse"
+#'       \item `rank_deficit`: Number of dependent constraints
+#'       \item `condition_number`: Condition number of the covariance matrix
+#'       \item `n_measurements`: Number of observed AADT values
+#'       \item `n_links`: Number of traffic links
+#'       \item `n_constraints`: Number of flow conservation constraints
+#'       \item `underdetermined`: Logical indicating if system is underdetermined
+#'       \item `capped_count`: Number of variances capped to prevent numerical issues
+#'       \item `below_zero_count`: Number of negative predictions set to zero
+#'       \item `runtime`: Time elapsed during computation
+#'     }}
+#'   \item{matrices}{A list containing the incidence matrix `A1` and measurement
+#'     matrix `A2`.}
+#'
+#' @details
+#' The function implements the Bayesian update formula:
+#' \deqn{\boldsymbol{\mu}_{v|b} = \boldsymbol{\mu}_v + \boldsymbol{\Sigma}_{vb}\boldsymbol{\Sigma}_b^{-1}(\boldsymbol{b} - \boldsymbol{A}\boldsymbol{\mu}_v)}
+#' \deqn{\boldsymbol{\Sigma}_{v|b} = \boldsymbol{\Sigma}_v - \boldsymbol{\Sigma}_{vb}\boldsymbol{\Sigma}_b^{-1}\boldsymbol{\Sigma}_{vb}^\top}
+#'
+#' where the constraint system is \eqn{\boldsymbol{A}\boldsymbol{v} + \boldsymbol{\varepsilon} = \boldsymbol{b}}
+#' with \eqn{\boldsymbol{A} = [\boldsymbol{A}_1; \boldsymbol{A}_2]} stacking flow conservation
+#' and measurement constraints.
+#'
+#' The function handles several numerical stability issues:
+#' \itemize{
+#'   \item Extreme variances are capped at 1e10
+#'   \item Rank-deficient systems use pseudoinverse
+#'   \item Ill-conditioned systems use regularization
+#'   \item Negative predictions are set to zero
+#'   \item Posterior variances are bounded below by 1e-6
+#' }
+#'
+#' @seealso \code{\link{balance_predictions}}, \code{\link{build_incidence_matrix}},
+#'   \code{\link{build_measurement_matrix}}
+#'
+#' @keywords internal
 balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd = NULL,
                                       constraint_matrix = NULL,
                                       colname_aadt = "heavyAadt", colname_measurement_sd = "sigma_error",
