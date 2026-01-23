@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_balancing_clusters.R
 \name{find_neighboring_clusters}
 \alias{find_neighboring_clusters}
-\title{Find Neighboring Clusters Across Barriers}
+\title{Find neighboring clusters across barriers}
 \usage{
 find_neighboring_clusters(
   cluster_links,
@@ -42,7 +42,7 @@ For each link in the cluster:
   \item Return unique cluster IDs (excluding self)
 }
 }
-\section{Why Look Through Barriers}{
+\section{Why look through barriers}{
 
 Base clusters are disconnected by design (barriers removed). To enable merging,
 we need to identify which clusters are adjacent in the original network, even

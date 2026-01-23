@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{flatten_df}
 \alias{flatten_df}
-\title{Flatten Data Frame}
+\title{Flatten data frame}
 \usage{
 flatten_df(df)
 }

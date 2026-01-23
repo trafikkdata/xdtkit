@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{get_best_traffic_volume}
 \alias{get_best_traffic_volume}
-\title{Get Best Traffic Volume}
+\title{Get best traffic volume}
 \usage{
 get_best_traffic_volume(df)
 }

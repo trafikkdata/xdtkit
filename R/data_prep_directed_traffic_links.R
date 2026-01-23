@@ -117,7 +117,7 @@ validate_input_data <- function(traffic_link_data = NULL, directed_traffic_link_
 # Process traffic volume ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Process Traffic Volume Data
+#' Process traffic volume data
 #'
 #' Processes traffic volume data based on the year, handling different data structures
 #' for years before and after 2024.
@@ -139,7 +139,7 @@ process_traffic_volume <- function(df, year){
   return(df)
 }
 
-#' Get Best Traffic Volume
+#' Get best traffic volume
 #'
 #' Handles nested dataframes containing traffic volumes for data before 2024.
 #'
@@ -151,7 +151,7 @@ get_best_traffic_volume <- function(df){
   # (only for data before 2024)
 }
 
-#' Flatten Data Frame
+#' Flatten data frame
 #'
 #' Flattens nested columns in the data frame, specifically bestDataSourceAadt and lastYearAadt.
 #'
@@ -171,6 +171,14 @@ flatten_df <- function(df){
 # Heavy vehicle volumes ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+#' Add heavy AADT
+#'
+#' Calculates heavy vehicle AADT from the heavy ratio.
+#'
+#' @param df A data frame containing total AADT and heavy ratio.
+#'
+#' @return A data frame with heavy vehicle AADT
+#' @export
 add_heavy_aadt <- function(df){
   df <- df |>
     dplyr::mutate(heavyAadt = round(bestDataSourceAadt_heavyRatio*bestDataSourceAadt_trafficVolumeValue),
@@ -183,7 +191,7 @@ add_heavy_aadt <- function(df){
 # Process_list_columns ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Process List Columns
+#' Process list columns
 #'
 #' Processes all list columns in the data frame by extracting appropriate elements
 #' and removing remaining list columns.
@@ -208,7 +216,7 @@ process_list_columns <- function(df){
   return(df)
 }
 
-#' Extract Smallest Element
+#' Extract smallest element
 #'
 #' Extracts the smallest element from a vector, or returns the value if not a vector.
 #'
@@ -224,7 +232,7 @@ extract_smallest_element <- Vectorize(function(x){
   }
 })
 
-#' Safely Extract First Element
+#' Safely extract first element
 #'
 #' Safely extracts the first element from a vector or data frame.
 #'
@@ -238,7 +246,7 @@ safely_extract_first_element <- Vectorize(function(x){
   warning("Entry was not vector, character, numeric or null.")
 })
 
-#' Remove List Columns
+#' Remove list columns
 #'
 #' Removes all columns of type list from the data frame.
 #'
@@ -257,7 +265,7 @@ remove_list_columns <- function(df){
 # Standardize data types ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Standardize Data Types
+#' Standardize data types
 #'
 #' Converts columns to appropriate data types (numeric, integer, factor, logical).
 #'
@@ -292,7 +300,7 @@ standardize_data_types <- function(df){
 # Round and check AADT ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Round and Check AADT
+#' Round and check AADT
 #'
 #' Rounds AADT values and ensures they are non-negative.
 #'
@@ -311,7 +319,7 @@ round_and_check_aadt <- function(df){
 # Assign traffic volume source ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Assign Traffic Volume Source
+#' Assign traffic volume source
 #'
 #' Assigns a source label to each traffic volume measurement based on its characteristics.
 #'
@@ -342,7 +350,7 @@ assign_traffic_volume_source <- function(df, current_year){
 # Add county variable ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Add County Variable
+#' Add county variable
 #'
 #' Adds a county name variable to the data frame based on county ID codes.
 #'
@@ -365,7 +373,7 @@ add_county <- function(df){
 # Add municipality variable ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Add Municipality Variable
+#' Add municipality variable
 #'
 #' Adds a municipality name variable to the data frame based on municipality ID codes
 #' using the municipality_names package data.
@@ -391,7 +399,7 @@ add_municipality <- function(df){
 # Add roadSystem variable ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Add Road System Variable
+#' Add road system variable
 #'
 #' Adds a road system variable by extracting the road system type from
 #' roadSystemReferences (removes everything after the first space).
@@ -409,7 +417,7 @@ add_roadSystem <- function(df){
 # Add logLength variable ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Add Log-Transformed Length Variable
+#' Add log-transformed length variable
 #'
 #' Adds a log-transformed length variable to the data frame.
 #'
@@ -426,7 +434,7 @@ add_logLength <- function(df){
 # Remove redundant columns ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Remove Redundant Columns
+#' Remove redundant columns
 #'
 #' Removes redundant columns from the data frame.
 #'
@@ -457,7 +465,7 @@ remove_redundant_columns <- function(df){
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Fill in missing values ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#' Fill Missing Values with Multiple Imputation Strategies
+#' Fill missing values with multiple imputation strategies
 #'
 #' Imputes missing values in a data frame using three different strategies:
 #' replacement with "unknown" for categorical variables, mode imputation for
@@ -615,13 +623,14 @@ fill_missing_values <- function(df,
 # Add log of last year variables ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Add Log-Transformed Length Variable
+#' Add log-transformed length variable
 #'
-#' Adds a log-transformed length variable to the data frame.
+#' Adds a log-transformed last year's AADT variable to the data frame.
 #'
-#' @param df A data frame containing a length column
+#' @param df A data frame containing the column "lastYearAadt_aadt"
 #'
-#' @return A data frame with a logLength column added
+#' @return A data frame with a "lastYearAadt_logAadt" and
+#' "lastYearAadt_logHeavyAadt" column added.
 #' @export
 add_logLastYear <- function(df){
   df |>

@@ -2,7 +2,7 @@
 # Identify unbalanceable nodes ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Identify Unbalanceable Nodes
+#' Identify unbalanceable nodes
 #'
 #' Identifies nodes in the traffic network that cannot be balanced due to incomplete
 #' information or structural issues. Flags both I-intersections (where road systems

@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{assign_traffic_volume_source}
 \alias{assign_traffic_volume_source}
-\title{Assign Traffic Volume Source}
+\title{Assign traffic volume source}
 \usage{
 assign_traffic_volume_source(df, current_year)
 }

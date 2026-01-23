@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_balancing_clusters.R
 \name{merge_small_clusters}
 \alias{merge_small_clusters}
-\title{Merge Small Clusters with Neighboring Clusters}
+\title{Merge small clusters with neighboring clusters}
 \usage{
 merge_small_clusters(
   base_assignments,
@@ -52,14 +52,14 @@ The merging algorithm:
   \item Report merge statistics
 }
 }
-\section{Neighbor Finding}{
+\section{Neighbor finding}{
 
 Neighbors are found by looking through barrier links in the original network.
 This allows merging of clusters that are separated by measurement barriers
 but would naturally belong together.
 }
 
-\section{Merge Strategy}{
+\section{Merge strategy}{
 
 \itemize{
   \item Prefers smallest valid neighbors (keeps sizes balanced)

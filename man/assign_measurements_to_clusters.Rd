@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_balancing_clusters.R
 \name{assign_measurements_to_clusters}
 \alias{assign_measurements_to_clusters}
-\title{Assign Non-Barrier Measurement Links to Their Containing Cluster}
+\title{Assign non-barrier measurement links to their containing cluster}
 \usage{
 assign_measurements_to_clusters(base_assignments, measurement_links)
 }
@@ -33,10 +33,6 @@ Non-barrier measurements are those that:
   \item Were not selected as cluster boundaries
   \item Ended up inside a cluster after barrier removal
 }
-}
-\note{
-In the current implementation where all measurements are barriers,
-  this function typically returns an empty data frame.
 }
 \examples{
 \dontrun{

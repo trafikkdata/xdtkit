@@ -2,16 +2,40 @@
 % Please edit documentation in R/model_adjacency_matrix.R
 \name{build_adjacency_matrix}
 \alias{build_adjacency_matrix}
-\title{Build adjacency matrix}
+\title{Build adjacency matrix for traffic network}
 \usage{
 build_adjacency_matrix(link_data, exclude_public_transport = FALSE)
 }
 \arguments{
-\item{link_data}{Data frame with columns "startTrafficNodeId" and "endTrafficNodeId".}
+\item{link_data}{Data frame with columns `startTrafficNodeId` and
+`endTrafficNodeId` identifying the endpoints of each directed traffic link.
+If `exclude_public_transport = TRUE`, must also contain column
+`hasOnlyPublicTransportLanes`.}
+
+\item{exclude_public_transport}{Logical; if `TRUE`, sets all adjacencies
+involving public transport-only links to zero. Default `FALSE`. Public
+transport links often have very different traffic volumes than neighboring
+links, which can affect spatial smoothing in statistical models.}
 }
 \value{
-Adjacency matrix. The number of rows and columns are both equal to the number of traffic links. An entry is 1 if the correspondng traffic links are connected, 0 otherwise.
+A sparse symmetric adjacency matrix (dgCMatrix) with dimensions
+  n x n where n is the number of traffic links. Entry (i,j) is 1 if links
+  i and j share a traffic node, 0 otherwise. The diagonal is always 0
+  (links are not adjacent to themselves).
 }
 \description{
-Build adjacency matrix
+Constructs a sparse adjacency matrix representing which traffic links are
+geometrically connected (share a traffic node). Two links are considered
+adjacent if they share at least one traffic node (either start or end node).
+The matrix is symmetric and can optionally exclude public transport links.
+}
+\details{
+The function builds adjacency based on geometric connectivity only - it does
+not consider whether traffic can legally flow between links. For flow
+conservation constraints, use turning movement data instead.
+
+When `exclude_public_transport = TRUE`, rows and columns corresponding to
+public transport links are zeroed out, effectively isolating them from the
+adjacency structure. This is useful for spatial models where you want to
+prevent public transport links from influencing predictions on regular roads.
 }

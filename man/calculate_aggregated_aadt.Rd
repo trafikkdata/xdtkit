@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_bus_counts.R
 \name{calculate_aggregated_aadt}
 \alias{calculate_aggregated_aadt}
-\title{Calculate Aggregated AADT from Bus Counts}
+\title{Calculate aggregated AADT from bus counts}
 \usage{
 calculate_aggregated_aadt(
   stopsServeDifferentBuses,

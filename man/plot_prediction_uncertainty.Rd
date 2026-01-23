@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot.R
 \name{plot_prediction_uncertainty}
 \alias{plot_prediction_uncertainty}
-\title{Plot Prediction Uncertainty vs. Predicted AADT}
+\title{Plot prediction uncertainty vs predicted AADT}
 \usage{
 plot_prediction_uncertainty(
   directed_predictions,
@@ -20,89 +20,45 @@ plot_prediction_uncertainty(
 )
 }
 \arguments{
-\item{directed_predictions}{A data frame containing prediction and uncertainty
-columns. Must include columns: `inla_pred`, `balanced_pred`, `inla_pred_heavy`,
-`balanced_pred_heavy`, `inla_sd`, `balanced_sd`, `inla_sd_heavy`,
-`balanced_sd_heavy`, and optionally `has_measurement` or similar indicator.}
+\item{directed_predictions}{Data frame with prediction and uncertainty columns}
 
-\item{heavy_vehicle}{Logical. If `TRUE`, plots heavy vehicle predictions and
-uncertainties. If `FALSE` (default), plots total AADT.}
+\item{heavy_vehicle}{Logical; plot heavy vehicle predictions? Default FALSE}
 
-\item{balanced}{Logical. If `TRUE` (default), uses flow-balanced predictions
-and uncertainties. If `FALSE`, uses raw INLA predictions.}
+\item{balanced}{Logical; use balanced predictions? Default TRUE}
 
-\item{log10_x}{Logical. If `TRUE`, applies pseudo-log transformation (base 10)
-to the x-axis (predicted AADT). If `FALSE` (default), uses linear scale.}
+\item{log10_x}{Logical; apply pseudo-log transformation to x-axis? Default FALSE}
 
-\item{log10_y}{Logical. If `TRUE`, applies pseudo-log transformation (base 10)
-to the y-axis (standard deviation). If `FALSE` (default), uses linear scale.}
+\item{log10_y}{Logical; apply pseudo-log transformation to y-axis? Default FALSE}
 
-\item{color_by}{Character string specifying a column name to color points by
-(e.g., "has_measurement", "vegkategori", "functional_road_class").
-If `NULL` (default), all points are the same color.}
+\item{color_by}{Optional column name for color aesthetic}
 
-\item{alpha}{Numeric between 0 and 1 controlling point transparency.
-Default is 0.5. Lower values help with overplotting.}
+\item{alpha}{Point transparency (0-1). Default 0.5}
+
+\item{cap_sd}{Optional SD threshold; values above are excluded with warning}
+
+\item{title_text}{Optional text to append to plot title}
+
+\item{facet_by}{Optional column name for one-way faceting}
+
+\item{facet_by_2}{Optional column name for two-way faceting (with facet_by)}
+
+\item{facet_scales}{Facet scale type: "fixed", "free", "free_x", "free_y". Default "fixed"}
 }
 \value{
-A ggplot2 object showing standard deviation (y-axis) vs predicted
-  AADT (x-axis). The plot can be further customized using standard ggplot2
-  functions.
+A ggplot object showing standard deviation (y-axis) vs predicted
+  AADT (x-axis)
 }
 \description{
 Creates a scatter plot showing prediction uncertainty (standard deviation)
-against predicted AADT values. Useful for understanding how uncertainty
-scales with traffic volume and identifying segments with high uncertainty.
+against predicted AADT values, with optional log scaling, faceting, and
+color grouping. Useful for understanding how uncertainty scales with traffic
+volume and identifying high-uncertainty segments.
 }
 \details{
-The function automatically selects the appropriate prediction and uncertainty
-columns based on the `heavy_vehicle` and `balanced` arguments.
+The function selects columns based on `heavy_vehicle` and `balanced`:
+* Total AADT: `balanced_pred`/`inla_pred` and `balanced_sd`/`inla_sd`
+* Heavy vehicles: `balanced_pred_heavy`/`inla_pred_heavy` and `balanced_sd_heavy`/`inla_sd_heavy`
 
-When `color_by` is specified, points are colored by the values in that column.
-This is particularly useful for:
-\itemize{
-  \item Distinguishing measured vs. unmeasured segments (`has_measurement`)
-  \item Comparing uncertainty across road classes (`vegkategori`, `functional_road_class`)
-  \item Identifying spatial patterns (`fylke`, `kommune`)
-}
-
-Using pseudo-log transformations (`log10_x` or `log10_y`) helps visualize
-data spanning multiple orders of magnitude while handling zeros gracefully.
-}
-\examples{
-\dontrun{
-# Basic uncertainty plot
-plot_prediction_uncertainty(directed_predictions)
-
-# Log scale for both axes
-plot_prediction_uncertainty(
-  directed_predictions,
-  log10_x = TRUE,
-  log10_y = TRUE
-)
-
-# Color by measurement availability
-plot_prediction_uncertainty(
-  directed_predictions,
-  color_by = "has_measurement",
-  log10_x = TRUE
-)
-
-# Compare INLA vs balanced uncertainty for heavy vehicles
-library(patchwork)
-p1 <- plot_prediction_uncertainty(
-  directed_predictions,
-  heavy_vehicle = TRUE,
-  balanced = FALSE,
-  log10_x = TRUE
-)
-p2 <- plot_prediction_uncertainty(
-  directed_predictions,
-  heavy_vehicle = TRUE,
-  balanced = TRUE,
-  log10_x = TRUE
-)
-p1 + p2
-}
-
+Using `color_by` is useful for distinguishing measured vs unmeasured segments,
+comparing across road classes, or identifying spatial patterns.
 }

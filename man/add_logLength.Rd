@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{add_logLength}
 \alias{add_logLength}
-\title{Add Log-Transformed Length Variable}
+\title{Add log-transformed length variable}
 \usage{
 add_logLength(df)
 }

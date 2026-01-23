@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{process_list_columns}
 \alias{process_list_columns}
-\title{Process List Columns}
+\title{Process list columns}
 \usage{
 process_list_columns(df)
 }

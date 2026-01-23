@@ -48,6 +48,7 @@
 #'   \code{\link{strategic_network_clustering}}
 #'
 #' @export
+#' @importFrom rlang .data
 balance_predictions <- function(data,
                                 nodes,
                                 balancing_grouping_variable,
@@ -137,7 +138,8 @@ balance_predictions <- function(data,
               balanced_pred = mean(balanced_pred), # prediction is average of predictions
               balanced_sd = 1/n_duplicates*(sqrt(sum(balanced_sd^2))) # sd is 1/n_dup*sqrt(sum(sd^2))
     ) |>
-    setNames(c("id", "nduplicates", paste0("balanced_pred", suffix), paste0("balanced_sd", suffix)))
+    stats::setNames(c("id", "nduplicates", paste0("balanced_pred", suffix),
+                      paste0("balanced_sd", suffix)))
 
   # Add the measurement error
   group_diagnostics$measurement_sd <- dplyr::select(data, id, sigma_error)
@@ -278,9 +280,9 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
     cat("This cluster has no measured points. \n")
   }else{
     A2 <- as.matrix(build_measurement_matrix(data, colname_aadt = colname_aadt))
-    d <- na.omit(data[[colname_aadt]])
-    Sigma_epsilon_mark <- diag(as.vector(na.omit(data[[colname_measurement_sd]])^2),
-                               nrow = length(na.omit(data[[colname_measurement_sd]])))
+    d <- stats::na.omit(data[[colname_aadt]])
+    Sigma_epsilon_mark <- diag(as.vector(stats::na.omit(data[[colname_measurement_sd]])^2),
+                               nrow = length(stats::na.omit(data[[colname_measurement_sd]])))
   }
 
 

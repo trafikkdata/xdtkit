@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_inla.R
 \name{fit_inla_model}
 \alias{fit_inla_model}
-\title{Fit INLA Model for Traffic Volume Prediction}
+\title{Fit INLA model for traffic volume prediction}
 \usage{
 fit_inla_model(
   data,
@@ -33,6 +33,8 @@ fit_inla_model(
 \item{spatial_term}{Formula for spatial random effect (default: Besag proper with constraints)
 Note: spatial_term is only used when adjacency_matrix is provided (single spatial effect)}
 
+\item{heavy_vehicle}{Logical. Whether or not the model is for heavy vehicles (using the column "heavyAadt" as response) or all vehicles (using column "aadt"). Default FALSE.}
+
 \item{family}{INLA family, either "poisson" or "nbinomial" (default: "poisson")}
 }
 \value{
@@ -42,7 +44,7 @@ Object of class "inla_traffic_model" containing:
   \item{inla_model}{Full INLA model object}
 }
 \description{
-Fit INLA Model for Traffic Volume Prediction
+Fit INLA model for traffic volume prediction
 }
 \examples{
 \dontrun{

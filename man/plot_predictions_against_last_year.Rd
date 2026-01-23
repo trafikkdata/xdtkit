@@ -16,71 +16,37 @@ plot_predictions_against_last_year(
 )
 }
 \arguments{
-\item{directed_predictions}{A data frame containing prediction columns and
-last year's AADT values. Must include columns: `inla_pred`, `balanced_pred`,
-`inla_pred_heavy`, `balanced_pred_heavy`, `lastYearAadt_aadt`, and
-`lastYearAadt_heavyAadt`.}
+\item{directed_predictions}{Data frame with prediction and last year columns}
 
-\item{heavy_vehicle}{Logical. If `TRUE`, plots heavy vehicle predictions and
-last year values. If `FALSE` (default), plots total AADT.}
+\item{heavy_vehicle}{Logical; plot heavy vehicle predictions? Default FALSE}
 
-\item{balanced}{Logical. If `TRUE` (default), uses flow-balanced predictions.
-If `FALSE`, uses raw INLA predictions without flow conservation constraints.}
+\item{balanced}{Logical; use balanced predictions? Default TRUE}
 
-\item{log10_axis}{Logical. If `TRUE`, applies pseudo-log transformation
-(base 10) to both axes, which handles zero values gracefully while
-maintaining log-like scaling for larger values. If `FALSE` (default),
-uses linear scales.}
+\item{log10_axis}{Logical; apply pseudo-log transformation to both axes? Default FALSE}
+
+\item{color_by}{Optional column name for color aesthetic}
+
+\item{facet_by}{Optional column name for one-way faceting}
+
+\item{facet_by_2}{Optional column name for two-way faceting (with facet_by)}
+
+\item{facet_scales}{Facet scale type: "fixed", "free", "free_x", "free_y". Default "fixed"}
 }
 \value{
-A ggplot2 object showing predictions (y-axis) vs last year's AADT
-  (x-axis) with a 1:1 reference line (dashed red). The plot can be further
-  customized using standard ggplot2 functions.
+A ggplot object with predictions (y-axis) vs last year's AADT (x-axis)
+  and a 1:1 reference line. Points above the line indicate increased predicted
+  traffic; points below indicate decreased traffic.
 }
 \description{
 Creates a scatter plot comparing predicted AADT values against the previous
-year's AADT, with optional log scaling. Useful for assessing year-over-year
-prediction stability and identifying segments with large changes.
+year's AADT, with optional log scaling and faceting. Useful for assessing
+year-over-year prediction stability.
 }
 \details{
-The function automatically selects the appropriate prediction and last year
-columns based on the `heavy_vehicle` and `balanced` arguments:
-\itemize{
-  \item For total AADT: uses `balanced_pred` or `inla_pred` vs `lastYearAadt_aadt`
-  \item For heavy vehicles: uses `balanced_pred_heavy` or `inla_pred_heavy`
-        vs `lastYearAadt_heavyAadt`
-}
+The function selects columns based on `heavy_vehicle` and `balanced`:
+* Total AADT: `balanced_pred`/`inla_pred` vs `lastYearAadt_aadt`
+* Heavy vehicles: `balanced_pred_heavy`/`inla_pred_heavy` vs `lastYearAadt_heavyAadt`
 
-The 1:1 reference line (red dashed) indicates perfect agreement with last
-year's values. Points above the line indicate increased predicted traffic;
-points below indicate decreased predicted traffic.
-
-When `log10_axis = TRUE`, the function uses `scales::pseudo_log_trans()`
-which behaves like log10 for large values but handles zeros smoothly without
-requiring data transformation or filtering.
-}
-\examples{
-\dontrun{
-# Basic plot with balanced predictions on linear scale
-plot_predictions_against_last_year(directed_predictions)
-
-# Heavy vehicle predictions with log scale
-plot_predictions_against_last_year(
-  directed_predictions,
-  heavy_vehicle = TRUE,
-  log10_axis = TRUE
-)
-
-# INLA predictions without flow balancing
-plot_predictions_against_last_year(
-  directed_predictions,
-  balanced = FALSE
-)
-
-# Further customize the plot
-plot_predictions_against_last_year(directed_predictions, log10_axis = TRUE) +
-  ggplot2::theme_bw() +
-  ggplot2::labs(subtitle = "2024 predictions")
-}
-
+When `log10_axis = TRUE`, uses `scales::pseudo_log_trans()` which handles
+zeros gracefully while maintaining log-like scaling for larger values.
 }

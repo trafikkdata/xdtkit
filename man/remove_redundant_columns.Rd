@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{remove_redundant_columns}
 \alias{remove_redundant_columns}
-\title{Remove Redundant Columns}
+\title{Remove redundant columns}
 \usage{
 remove_redundant_columns(df)
 }

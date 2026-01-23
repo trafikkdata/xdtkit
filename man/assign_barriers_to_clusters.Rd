@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_balancing_clusters.R
 \name{assign_barriers_to_clusters}
 \alias{assign_barriers_to_clusters}
-\title{Assign Barrier Links to All Neighboring Clusters}
+\title{Assign barrier links to all neighboring clusters}
 \usage{
 assign_barriers_to_clusters(network_graph, barriers, base_assignments)
 }

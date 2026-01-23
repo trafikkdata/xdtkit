@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{standardize_data_types}
 \alias{standardize_data_types}
-\title{Standardize Data Types}
+\title{Standardize data types}
 \usage{
 standardize_data_types(df)
 }

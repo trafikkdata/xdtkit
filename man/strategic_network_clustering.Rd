@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_balancing_clusters.R
 \name{strategic_network_clustering}
 \alias{strategic_network_clustering}
-\title{Strategic Network Clustering for Traffic Flow Balancing}
+\title{Strategic network clustering for traffic flow balancing}
 \usage{
 strategic_network_clustering(data)
 }

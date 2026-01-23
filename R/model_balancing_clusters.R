@@ -2,7 +2,7 @@
 # Create balancing clusters ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Strategic Network Clustering for Traffic Flow Balancing
+#' Strategic network clustering for traffic flow balancing
 #'
 #' Partitions a road network into clusters suitable for traffic flow balancing.
 #' The algorithm separates mainland from island components, uses measurement
@@ -235,7 +235,7 @@ strategic_network_clustering <- function(data) {
   return(all_assignments)
 }
 
-#' Assign Barrier Links to All Neighboring Clusters
+#' Assign barrier links to all neighboring clusters
 #'
 #' For each barrier link (measurement point used to separate clusters), identifies
 #' which clusters it borders and assigns it to all of them. This creates duplicate
@@ -307,7 +307,7 @@ assign_barriers_to_clusters <- function(network_graph, barriers, base_assignment
   return(barrier_assignments)
 }
 
-#' Assign Non-Barrier Measurement Links to Their Containing Cluster
+#' Assign non-barrier measurement links to their containing cluster
 #'
 #' Identifies measurement links that were not used as barriers and assigns them
 #' to whichever cluster they ended up in during base clustering. These links
@@ -333,8 +333,6 @@ assign_barriers_to_clusters <- function(network_graph, barriers, base_assignment
 #'   \item Ended up inside a cluster after barrier removal
 #' }
 #'
-#' @note In the current implementation where all measurements are barriers,
-#'   this function typically returns an empty data frame.
 #'
 #' @examples
 #' \dontrun{
@@ -355,7 +353,7 @@ assign_measurements_to_clusters <- function(base_assignments, measurement_links)
   return(measurement_assignments)
 }
 
-#' Merge Small Clusters with Neighboring Clusters
+#' Merge small clusters with neighboring clusters
 #'
 #' Iteratively merges clusters smaller than \code{min_size} with neighboring
 #' clusters, preferring neighbors that keep the merged result under \code{max_size}.
@@ -390,12 +388,12 @@ assign_measurements_to_clusters <- function(base_assignments, measurement_links)
 #'   \item Report merge statistics
 #' }
 #'
-#' @section Neighbor Finding:
+#' @section Neighbor finding:
 #' Neighbors are found by looking through barrier links in the original network.
 #' This allows merging of clusters that are separated by measurement barriers
 #' but would naturally belong together.
 #'
-#' @section Merge Strategy:
+#' @section Merge strategy:
 #' \itemize{
 #'   \item Prefers smallest valid neighbors (keeps sizes balanced)
 #'   \item Cannot merge if all neighbors would exceed max_size
@@ -494,7 +492,7 @@ merge_small_clusters <- function(base_assignments, network_graph, barrier_links,
   return(assignments)
 }
 
-#' Find Neighboring Clusters Across Barriers
+#' Find neighboring clusters across barriers
 #'
 #' Identifies which clusters neighbor a given cluster by looking through barrier
 #' links. Essential for merging clusters that are separated by measurement points
@@ -521,7 +519,7 @@ merge_small_clusters <- function(base_assignments, network_graph, barrier_links,
 #'   \item Return unique cluster IDs (excluding self)
 #' }
 #'
-#' @section Why Look Through Barriers:
+#' @section Why look through barriers:
 #' Base clusters are disconnected by design (barriers removed). To enable merging,
 #' we need to identify which clusters are adjacent in the original network, even
 #' if separated by measurement barriers.

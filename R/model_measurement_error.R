@@ -48,6 +48,7 @@ build_measurement_matrix <- function(data, colname_aadt = "aadt") {
 #'        required for "Trafikkdata_continuous", "Trafikkdata_periodic", and "AutoPASS"
 #' @param current_year Current year for temporal decay calculation (default: 2024)
 #' @param params List of parameters (see details)
+#' @param return_cv Logical, if TRUE the function returns a data frame with the CV values. Useful for debugging.
 #'
 #' @details
 #' Parameters list should contain:
@@ -92,7 +93,7 @@ calculate_measurement_error <- function(
   )
 
   # Merge user params with defaults
-  params <- modifyList(default_params, params)
+  params <- utils::modifyList(default_params, params)
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Extract data columns ----

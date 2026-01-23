@@ -2,18 +2,49 @@
 % Please edit documentation in R/model_incidence_matrix.R
 \name{build_incidence_matrix}
 \alias{build_incidence_matrix}
-\title{Build incidence matrix from traffic links and constructed flow nodes}
+\title{Build incidence matrix from traffic links and turning movements}
 \usage{
 build_incidence_matrix(nodes, traffic_links, nodes_to_balance)
 }
 \arguments{
-\item{nodes}{data frame containing legalTurningMovements column (which has JSON syntax)}
+\item{nodes}{Data frame containing traffic node data with column
+`legalTurningMovements` (JSON format) describing legal turns at each
+intersection, plus columns `unbalanceable_node` and `i_intersection` for
+filtering.}
 
-\item{traffic_links}{traffic link data set}
+\item{traffic_links}{Data frame of traffic link data with columns `id`,
+`startTrafficNodeId`, and `endTrafficNodeId`.}
+
+\item{nodes_to_balance}{Character string specifying which nodes should have
+flow conservation constraints. Either "all" (balance at all nodes with no
+filtering), or "complete nodes" (exclude both I-intersections and nodes
+marked as unbalanceable).}
 }
 \value{
-incidence matrix
+Sparse incidence matrix (A1 in the flow balancing equations) with
+  one row per flow node and one column per traffic link. Entry (i,j) is
+  -1 if link j flows into flow node i, +1 if it flows out, and 0 otherwise.
+  When multiplied by traffic volumes, each row sums to zero if flow is
+  conserved at that flow node.
 }
 \description{
-Build incidence matrix from traffic links and constructed flow nodes
+Constructs a directed incidence matrix that encodes flow conservation
+constraints at traffic intersections. Each row represents a "flow node"
+(a group of connected turning movements) where incoming traffic must equal
+outgoing traffic. Uses legal turning movement data to determine which links
+are actually connected by traffic flow, rather than just geometric adjacency.
+}
+\details{
+**Flow nodes vs traffic nodes:** A single traffic node (intersection) may
+generate multiple flow nodes. The algorithm identifies connected components
+in the turning movement graph - each component becomes one flow node where
+flow conservation is enforced independently.
+
+**Boundary nodes:** Nodes at cluster boundaries (where some turning movements
+reference links outside the current link set) are automatically excluded from
+flow conservation to avoid measurement artifacts.
+
+**I-intersections:** Simple pass-through intersections where a single link
+enters and a single link exits are excluded when `nodes_to_balance = "complete nodes"`
+as they provide redundant constraints.
 }

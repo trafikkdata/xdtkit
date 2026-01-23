@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot.R
 \name{plot_traffic_links_map}
 \alias{plot_traffic_links_map}
-\title{Create Interactive Map of Traffic Links}
+\title{Create interactive map of traffic links}
 \usage{
 plot_traffic_links_map(
   directed_predictions,

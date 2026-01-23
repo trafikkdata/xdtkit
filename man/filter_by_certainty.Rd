@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_bus_counts.R
 \name{filter_by_certainty}
 \alias{filter_by_certainty}
-\title{Filter Bus AADT by Certainty Level}
+\title{Filter bus AADT by certainty level}
 \usage{
 filter_by_certainty(bus_aadt_data, lowest_certainty)
 }

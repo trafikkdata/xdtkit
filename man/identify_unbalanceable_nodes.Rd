@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_nodes.R
 \name{identify_unbalanceable_nodes}
 \alias{identify_unbalanceable_nodes}
-\title{Identify Unbalanceable Nodes}
+\title{Identify unbalanceable nodes}
 \usage{
 identify_unbalanceable_nodes(nodes, directed_traffic_links)
 }

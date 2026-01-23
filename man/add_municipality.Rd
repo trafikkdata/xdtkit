@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{add_municipality}
 \alias{add_municipality}
-\title{Add Municipality Variable}
+\title{Add municipality variable}
 \usage{
 add_municipality(df)
 }

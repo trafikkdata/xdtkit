@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{round_and_check_aadt}
 \alias{round_and_check_aadt}
-\title{Round and Check AADT}
+\title{Round and check AADT}
 \usage{
 round_and_check_aadt(df)
 }

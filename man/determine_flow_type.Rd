@@ -2,18 +2,18 @@
 % Please edit documentation in R/model_incidence_matrix.R
 \name{determine_flow_type}
 \alias{determine_flow_type}
-\title{Determine the flow type based on incoming/outgoing link counts}
+\title{Determine flow type from link counts}
 \usage{
 determine_flow_type(incoming_links, outgoing_links)
 }
 \arguments{
-\item{incoming_links}{character vector of incoming links}
+\item{incoming_links}{Character vector of incoming link IDs}
 
-\item{outgoing_links}{character vector of outgoing links}
+\item{outgoing_links}{Character vector of outgoing link IDs}
 }
 \value{
-character string describing flow type
+Character string: "passthrough", "merge", "split", "mixing", or "unknown"
 }
 \description{
-Determine the flow type based on incoming/outgoing link counts
+Determine flow type from link counts
 }

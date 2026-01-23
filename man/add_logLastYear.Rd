@@ -2,16 +2,17 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{add_logLastYear}
 \alias{add_logLastYear}
-\title{Add Log-Transformed Length Variable}
+\title{Add log-transformed length variable}
 \usage{
 add_logLastYear(df)
 }
 \arguments{
-\item{df}{A data frame containing a length column}
+\item{df}{A data frame containing the column "lastYearAadt_aadt"}
 }
 \value{
-A data frame with a logLength column added
+A data frame with a "lastYearAadt_logAadt" and
+"lastYearAadt_logHeavyAadt" column added.
 }
 \description{
-Adds a log-transformed length variable to the data frame.
+Adds a log-transformed last year's AADT variable to the data frame.
 }

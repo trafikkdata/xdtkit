@@ -30,6 +30,8 @@ required for "Trafikkdata_continuous", "Trafikkdata_periodic", and "AutoPASS"}
 \item{current_year}{Current year for temporal decay calculation (default: 2024)}
 
 \item{params}{List of parameters (see details)}
+
+\item{return_cv}{Logical, if TRUE the function returns a data frame with the CV values. Useful for debugging.}
 }
 \value{
 Vector of measurement error standard deviations (same length as input data)

@@ -2,20 +2,20 @@
 % Please edit documentation in R/model_incidence_matrix.R
 \name{find_connected_components}
 \alias{find_connected_components}
-\title{Find connected components in bipartite graph using union-find}
+\title{Find connected components using union-find algorithm}
 \usage{
 find_connected_components(edges, all_incoming, all_outgoing)
 }
 \arguments{
-\item{edges}{data frame with from/to columns representing graph edges}
+\item{edges}{Data frame with `from` and `to` columns representing graph edges}
 
-\item{all_incoming}{character vector of incoming link IDs}
+\item{all_incoming}{Character vector of incoming link IDs}
 
-\item{all_outgoing}{character vector of outgoing link IDs}
+\item{all_outgoing}{Character vector of outgoing link IDs}
 }
 \value{
-list of character vectors, each representing a connected component
+List of character vectors, each containing node IDs in one component
 }
 \description{
-Find connected components in bipartite graph using union-find
+Find connected components using union-find algorithm
 }

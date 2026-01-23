@@ -2,15 +2,9 @@
 % Please edit documentation in R/data_prep_bus_counts.R
 \name{calculate_bus_aadt}
 \alias{calculate_bus_aadt}
-\title{Calculate Bus-Based AADT Estimates}
+\title{Calculate bus-based AADT estimates}
 \usage{
-calculate_bus_aadt(
-  stops_on_traffic_links_data,
-  bus_counts_data,
-  year,
-  cv_uncertainty = 1.06,
-  location_uncertainties = c(High = 0.1, Medium = 0.2, Low = 0.3)
-)
+calculate_bus_aadt(stops_on_traffic_links_data, bus_counts_data, year)
 }
 \arguments{
 \item{stops_on_traffic_links_data}{Data frame linking bus stops to traffic links}
@@ -18,12 +12,6 @@ calculate_bus_aadt(
 \item{bus_counts_data}{Data frame with bus counts by stop (columns: stopPointRef, no_of_buses)}
 
 \item{year}{The year the data were collected}
-
-\item{cv_uncertainty}{Coefficient of variation for count uncertainty (default: 1.06)}
-
-\item{location_uncertainties}{The uncertainty connected to how certain we are that
-the bus stop count represents the assigned traffic link.
-Named vector with entries "High", "Medium", and "Low", for example c(High = 0.1, Medium = 0.2, Low = 0.3)}
 }
 \value{
 Data frame with columns: id, stopPointRef, bus_aadt, bus_sd, stopCertainty

@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{safely_extract_first_element}
 \alias{safely_extract_first_element}
-\title{Safely Extract First Element}
+\title{Safely extract first element}
 \usage{
 safely_extract_first_element(x)
 }

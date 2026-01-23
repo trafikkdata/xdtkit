@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_bus_counts.R
 \name{calculate_bus_uncertainty}
 \alias{calculate_bus_uncertainty}
-\title{Calculate Uncertainty for Bus AADT}
+\title{Calculate uncertainty for bus AADT}
 \usage{
 calculate_bus_uncertainty(
   stopsServeDifferentBuses,

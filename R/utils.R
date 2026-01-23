@@ -98,7 +98,7 @@ utils::globalVariables(c(
   "stopCertainty", "stopsServeDifferentBuses", "trikkestopp", "comment",
   "hasOnlyPublicTransportLanes", "isRamp", "length", "maxLanes", "minLanes",
   "startTrafficNodeId", "endTrafficNodeId", "text",
-  "no_of_buses",
+  "no_of_buses", "stopAggregatesDirections",
   # Others
   ".had_aadt", "bestDataSourceAadt_coverage", "bestDataSourceAadt_heavyRatio",
   "bestDataSourceAadt_trafficVolumeValue", "bestDataSourceAadt_year",
@@ -109,5 +109,8 @@ utils::globalVariables(c(
   "V", "cluster_id", "size", "merged_size", "traffic_node", "link_id.x",
   "link_id.y", "link_pair", "cluster_id",
   "estimatedAadt", "estimatedAadtStandardDeviation", "estimatedAadtHeavy",
-  "estimatedAadtHeavyStandardDeviation"
+  "estimatedAadtHeavyStandardDeviation",
+  "lastYearAadt_heavyAadt", "balanced_pred", "balanced_sd", "n_duplicates",
+  "density", "n", "label", "unbalanceable_node", "heavyAadt"
+
   ))

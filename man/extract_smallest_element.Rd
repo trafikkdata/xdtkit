@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{extract_smallest_element}
 \alias{extract_smallest_element}
-\title{Extract Smallest Element}
+\title{Extract smallest element}
 \usage{
 extract_smallest_element(x)
 }

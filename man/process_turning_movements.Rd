@@ -2,20 +2,25 @@
 % Please edit documentation in R/model_incidence_matrix.R
 \name{process_turning_movements}
 \alias{process_turning_movements}
-\title{Process turning movements JSON string and create flow nodes}
+\title{Process turning movements JSON and create flow nodes}
 \usage{
 process_turning_movements(turning_movements_json, link_ids, node_id)
 }
 \arguments{
-\item{turning_movements_json}{character string containing JSON data}
+\item{turning_movements_json}{JSON string containing turning movement data}
 
-\item{link_ids}{character vector of all possible link IDs}
+\item{link_ids}{Character vector of all traffic link IDs in the dataset}
 
-\item{node_id}{character string identifying the traffic node}
+\item{node_id}{Character string identifying the traffic node}
 }
 \value{
-list containing flow node constraints and metadata
+List with elements: `flow_nodes` (character vector of flow node
+  names), `constraint_rows` (matrix rows for incidence matrix),
+  `movements_data` (parsed data frame), and optionally `is_boundary` (logical)
 }
 \description{
-Process turning movements JSON string and create flow nodes
+Parses JSON turning movement data for a single traffic node and identifies
+flow nodes (connected components in the turning movement graph). Boundary
+nodes (with movements referencing links outside the dataset) return empty
+constraints.
 }

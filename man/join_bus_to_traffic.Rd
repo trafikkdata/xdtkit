@@ -53,6 +53,7 @@ df <- data.frame(
   id = c("L001", "L002", "L003", "L004"),
   parentTrafficLinkId = c("P001", "P001", "P002", "P002"),
   aadt = c(5000, NA, 3000, NA),
+  heavyAadt = c(500, NA, NA, NA),
   traffic_volume_source = c("continuous", NA, "periodic", NA),
   traffic_volume_year = c(2024, NA, 2024, NA)
 )

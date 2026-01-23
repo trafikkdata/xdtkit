@@ -7,16 +7,16 @@
 create_flow_nodes(movements_df, node_id)
 }
 \arguments{
-\item{movements_df}{data frame with incoming and outgoing columns}
+\item{movements_df}{Data frame with columns `incoming` and `outgoing` (list column)}
 
-\item{node_id}{character string for the traffic node}
+\item{node_id}{Character string for the traffic node ID}
 }
 \value{
-list of flow node objects
+List of flow node objects, each containing `name`, `incoming_links`,
+  `outgoing_links`, `parent_node`, and `flow_type`
 }
 \description{
-Strategy:
-1. Create a bipartite graph of incoming -> outgoing connections
-2. Find connected components in this graph
-3. Each connected component becomes one flow node
+Identifies connected components in the bipartite turning movement graph.
+Each component represents a group of turning movements where flow should be
+conserved independently.
 }

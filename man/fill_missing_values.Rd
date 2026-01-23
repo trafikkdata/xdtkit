@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{fill_missing_values}
 \alias{fill_missing_values}
-\title{Fill Missing Values with Multiple Imputation Strategies}
+\title{Fill missing values with multiple imputation strategies}
 \usage{
 fill_missing_values(
   df,

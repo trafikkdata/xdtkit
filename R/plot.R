@@ -1,72 +1,40 @@
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Predictions against last year's values ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 #' Plot AADT predictions against last year's values
 #'
 #' Creates a scatter plot comparing predicted AADT values against the previous
-#' year's AADT, with optional log scaling. Useful for assessing year-over-year
-#' prediction stability and identifying segments with large changes.
+#' year's AADT, with optional log scaling and faceting. Useful for assessing
+#' year-over-year prediction stability.
 #'
-#' @param directed_predictions A data frame containing prediction columns and
-#'   last year's AADT values. Must include columns: `inla_pred`, `balanced_pred`,
-#'   `inla_pred_heavy`, `balanced_pred_heavy`, `lastYearAadt_aadt`, and
-#'   `lastYearAadt_heavyAadt`.
-#' @param heavy_vehicle Logical. If `TRUE`, plots heavy vehicle predictions and
-#'   last year values. If `FALSE` (default), plots total AADT.
-#' @param balanced Logical. If `TRUE` (default), uses flow-balanced predictions.
-#'   If `FALSE`, uses raw INLA predictions without flow conservation constraints.
-#' @param log10_axis Logical. If `TRUE`, applies pseudo-log transformation
-#'   (base 10) to both axes, which handles zero values gracefully while
-#'   maintaining log-like scaling for larger values. If `FALSE` (default),
-#'   uses linear scales.
+#' @param directed_predictions Data frame with prediction and last year columns
+#' @param heavy_vehicle Logical; plot heavy vehicle predictions? Default FALSE
+#' @param balanced Logical; use balanced predictions? Default TRUE
+#' @param log10_axis Logical; apply pseudo-log transformation to both axes? Default FALSE
+#' @param color_by Optional column name for color aesthetic
+#' @param facet_by Optional column name for one-way faceting
+#' @param facet_by_2 Optional column name for two-way faceting (with facet_by)
+#' @param facet_scales Facet scale type: "fixed", "free", "free_x", "free_y". Default "fixed"
 #'
-#' @return A ggplot2 object showing predictions (y-axis) vs last year's AADT
-#'   (x-axis) with a 1:1 reference line (dashed red). The plot can be further
-#'   customized using standard ggplot2 functions.
+#' @return A ggplot object with predictions (y-axis) vs last year's AADT (x-axis)
+#'   and a 1:1 reference line. Points above the line indicate increased predicted
+#'   traffic; points below indicate decreased traffic.
 #'
 #' @details
-#' The function automatically selects the appropriate prediction and last year
-#' columns based on the `heavy_vehicle` and `balanced` arguments:
-#' \itemize{
-#'   \item For total AADT: uses `balanced_pred` or `inla_pred` vs `lastYearAadt_aadt`
-#'   \item For heavy vehicles: uses `balanced_pred_heavy` or `inla_pred_heavy`
-#'         vs `lastYearAadt_heavyAadt`
-#' }
+#' The function selects columns based on `heavy_vehicle` and `balanced`:
+#' * Total AADT: `balanced_pred`/`inla_pred` vs `lastYearAadt_aadt`
+#' * Heavy vehicles: `balanced_pred_heavy`/`inla_pred_heavy` vs `lastYearAadt_heavyAadt`
 #'
-#' The 1:1 reference line (red dashed) indicates perfect agreement with last
-#' year's values. Points above the line indicate increased predicted traffic;
-#' points below indicate decreased predicted traffic.
+#' When `log10_axis = TRUE`, uses `scales::pseudo_log_trans()` which handles
+#' zeros gracefully while maintaining log-like scaling for larger values.
 #'
-#' When `log10_axis = TRUE`, the function uses `scales::pseudo_log_trans()`
-#' which behaves like log10 for large values but handles zeros smoothly without
-#' requiring data transformation or filtering.
-#'
-#' @examples
-#' \dontrun{
-#' # Basic plot with balanced predictions on linear scale
-#' plot_predictions_against_last_year(directed_predictions)
-#'
-#' # Heavy vehicle predictions with log scale
-#' plot_predictions_against_last_year(
-#'   directed_predictions,
-#'   heavy_vehicle = TRUE,
-#'   log10_axis = TRUE
-#' )
-#'
-#' # INLA predictions without flow balancing
-#' plot_predictions_against_last_year(
-#'   directed_predictions,
-#'   balanced = FALSE
-#' )
-#'
-#' # Further customize the plot
-#' plot_predictions_against_last_year(directed_predictions, log10_axis = TRUE) +
-#'   ggplot2::theme_bw() +
-#'   ggplot2::labs(subtitle = "2024 predictions")
-#' }
+#' @export
 #'
 #' @importFrom ggplot2 ggplot aes geom_point geom_abline labs theme_minimal
 #'   scale_x_continuous scale_y_continuous annotation_logticks
 #' @importFrom scales pseudo_log_trans
-#'
-#' @export
+#' @importFrom rlang .data
 plot_predictions_against_last_year <- function(directed_predictions,
                                                heavy_vehicle = FALSE,
                                                balanced = TRUE,
@@ -144,92 +112,47 @@ plot_predictions_against_last_year <- function(directed_predictions,
   }
   return(p)
 }
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Uncertainty ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Plot Prediction Uncertainty vs. Predicted AADT
+#' Plot prediction uncertainty vs predicted AADT
 #'
 #' Creates a scatter plot showing prediction uncertainty (standard deviation)
-#' against predicted AADT values. Useful for understanding how uncertainty
-#' scales with traffic volume and identifying segments with high uncertainty.
+#' against predicted AADT values, with optional log scaling, faceting, and
+#' color grouping. Useful for understanding how uncertainty scales with traffic
+#' volume and identifying high-uncertainty segments.
 #'
-#' @param directed_predictions A data frame containing prediction and uncertainty
-#'   columns. Must include columns: `inla_pred`, `balanced_pred`, `inla_pred_heavy`,
-#'   `balanced_pred_heavy`, `inla_sd`, `balanced_sd`, `inla_sd_heavy`,
-#'   `balanced_sd_heavy`, and optionally `has_measurement` or similar indicator.
-#' @param heavy_vehicle Logical. If `TRUE`, plots heavy vehicle predictions and
-#'   uncertainties. If `FALSE` (default), plots total AADT.
-#' @param balanced Logical. If `TRUE` (default), uses flow-balanced predictions
-#'   and uncertainties. If `FALSE`, uses raw INLA predictions.
-#' @param log10_x Logical. If `TRUE`, applies pseudo-log transformation (base 10)
-#'   to the x-axis (predicted AADT). If `FALSE` (default), uses linear scale.
-#' @param log10_y Logical. If `TRUE`, applies pseudo-log transformation (base 10)
-#'   to the y-axis (standard deviation). If `FALSE` (default), uses linear scale.
-#' @param color_by Character string specifying a column name to color points by
-#'   (e.g., "has_measurement", "vegkategori", "functional_road_class").
-#'   If `NULL` (default), all points are the same color.
-#' @param alpha Numeric between 0 and 1 controlling point transparency.
-#'   Default is 0.5. Lower values help with overplotting.
+#' @param directed_predictions Data frame with prediction and uncertainty columns
+#' @param heavy_vehicle Logical; plot heavy vehicle predictions? Default FALSE
+#' @param balanced Logical; use balanced predictions? Default TRUE
+#' @param log10_x Logical; apply pseudo-log transformation to x-axis? Default FALSE
+#' @param log10_y Logical; apply pseudo-log transformation to y-axis? Default FALSE
+#' @param color_by Optional column name for color aesthetic
+#' @param alpha Point transparency (0-1). Default 0.5
+#' @param cap_sd Optional SD threshold; values above are excluded with warning
+#' @param title_text Optional text to append to plot title
+#' @param facet_by Optional column name for one-way faceting
+#' @param facet_by_2 Optional column name for two-way faceting (with facet_by)
+#' @param facet_scales Facet scale type: "fixed", "free", "free_x", "free_y". Default "fixed"
 #'
-#' @return A ggplot2 object showing standard deviation (y-axis) vs predicted
-#'   AADT (x-axis). The plot can be further customized using standard ggplot2
-#'   functions.
+#' @return A ggplot object showing standard deviation (y-axis) vs predicted
+#'   AADT (x-axis)
 #'
 #' @details
-#' The function automatically selects the appropriate prediction and uncertainty
-#' columns based on the `heavy_vehicle` and `balanced` arguments.
+#' The function selects columns based on `heavy_vehicle` and `balanced`:
+#' * Total AADT: `balanced_pred`/`inla_pred` and `balanced_sd`/`inla_sd`
+#' * Heavy vehicles: `balanced_pred_heavy`/`inla_pred_heavy` and `balanced_sd_heavy`/`inla_sd_heavy`
 #'
-#' When `color_by` is specified, points are colored by the values in that column.
-#' This is particularly useful for:
-#' \itemize{
-#'   \item Distinguishing measured vs. unmeasured segments (`has_measurement`)
-#'   \item Comparing uncertainty across road classes (`vegkategori`, `functional_road_class`)
-#'   \item Identifying spatial patterns (`fylke`, `kommune`)
-#' }
-#'
-#' Using pseudo-log transformations (`log10_x` or `log10_y`) helps visualize
-#' data spanning multiple orders of magnitude while handling zeros gracefully.
-#'
-#' @examples
-#' \dontrun{
-#' # Basic uncertainty plot
-#' plot_prediction_uncertainty(directed_predictions)
-#'
-#' # Log scale for both axes
-#' plot_prediction_uncertainty(
-#'   directed_predictions,
-#'   log10_x = TRUE,
-#'   log10_y = TRUE
-#' )
-#'
-#' # Color by measurement availability
-#' plot_prediction_uncertainty(
-#'   directed_predictions,
-#'   color_by = "has_measurement",
-#'   log10_x = TRUE
-#' )
-#'
-#' # Compare INLA vs balanced uncertainty for heavy vehicles
-#' library(patchwork)
-#' p1 <- plot_prediction_uncertainty(
-#'   directed_predictions,
-#'   heavy_vehicle = TRUE,
-#'   balanced = FALSE,
-#'   log10_x = TRUE
-#' )
-#' p2 <- plot_prediction_uncertainty(
-#'   directed_predictions,
-#'   heavy_vehicle = TRUE,
-#'   balanced = TRUE,
-#'   log10_x = TRUE
-#' )
-#' p1 + p2
-#' }
+#' Using `color_by` is useful for distinguishing measured vs unmeasured segments,
+#' comparing across road classes, or identifying spatial patterns.
 #'
 #' @importFrom ggplot2 ggplot aes geom_point labs theme_minimal
 #'   scale_x_continuous scale_y_continuous annotation_logticks
 #' @importFrom scales pseudo_log_trans
+#' @importFrom rlang .data
 #'
 #' @export
 plot_prediction_uncertainty <- function(directed_predictions,
@@ -352,7 +275,21 @@ plot_prediction_uncertainty <- function(directed_predictions,
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Coefficient of variation ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+#' Plot prediction coefficient of variation
+#'
+#' Creates a scatter plot of predicted AADT vs coefficient of variation (SD/mean).
+#'
+#' @param directed_predictions Data frame with prediction results
+#' @param heavy_vehicle Logical; plot heavy vehicle predictions? Default FALSE
+#' @param balanced Logical; use balanced predictions? Default TRUE
+#' @param log10_x Logical; log transform x-axis? Default FALSE
+#' @param log10_y Logical; log transform y-axis? Default FALSE
+#' @param color_by Optional column name for color aesthetic
+#' @param alpha Point transparency (0-1). Default 0.5
+#' @param cap_cv Optional CV threshold; values above are excluded with warning
+#'
+#' @return A ggplot object
+#' @export
 plot_prediction_cv <- function(directed_predictions,
                                heavy_vehicle = FALSE,
                                balanced = TRUE,
@@ -458,10 +395,26 @@ plot_prediction_cv <- function(directed_predictions,
 # Histogram of prediction relative uncertainty ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Plot histogram of prediction relative uncertainty ----
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+#' Plot histogram of prediction relative uncertainty
+#'
+#' Creates a histogram of coefficient of variation (SD/predicted AADT) with
+#' optional faceting and reference lines.
+#'
+#' @param directed_predictions Data frame with prediction results
+#' @param heavy_vehicle Logical; plot heavy vehicle predictions? Default FALSE
+#' @param balanced Logical; use balanced predictions? Default TRUE
+#' @param log10_x Logical; log transform x-axis? Default FALSE
+#' @param cap_cv Optional CV threshold; values above are excluded with warning
+#' @param facet_by Optional column name for one-way faceting
+#' @param facet_by_2 Optional column name for two-way faceting (with facet_by)
+#' @param facet_scales Facet scale type: "fixed", "free", "free_x", "free_y". Default "fixed"
+#' @param bins Number of histogram bins. Default 50
+#' @param show_density Logical; show density instead of count? Default FALSE
+#' @param reference_lines Numeric vector of vertical reference lines. Default c(0.5, 1.0)
+#' @param show_n Logical; show sample sizes in facet labels? Default TRUE
+#'
+#' @return A ggplot object
+#' @export
 plot_prediction_relative_uncertainty_histogram <- function(directed_predictions,
                                                            heavy_vehicle = FALSE,
                                                            balanced = TRUE,
@@ -610,7 +563,7 @@ plot_prediction_relative_uncertainty_histogram <- function(directed_predictions,
 # Leaflet map of traffic links ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Create Interactive Map of Traffic Links
+#' Create interactive map of traffic links
 #'
 #' Creates a leaflet map displaying traffic links colored by a specified variable.
 #' Useful for spatial exploration of predictions, uncertainty, and quality control.

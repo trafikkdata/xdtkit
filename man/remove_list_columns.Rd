@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{remove_list_columns}
 \alias{remove_list_columns}
-\title{Remove List Columns}
+\title{Remove list columns}
 \usage{
 remove_list_columns(df)
 }

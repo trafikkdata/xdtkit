@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{add_county}
 \alias{add_county}
-\title{Add County Variable}
+\title{Add county variable}
 \usage{
 add_county(df)
 }

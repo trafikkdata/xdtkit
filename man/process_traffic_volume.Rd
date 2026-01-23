@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_prep_directed_traffic_links.R
 \name{process_traffic_volume}
 \alias{process_traffic_volume}
-\title{Process Traffic Volume Data}
+\title{Process traffic volume data}
 \usage{
 process_traffic_volume(df, year)
 }

@@ -33,4 +33,8 @@ Imports:
     stats,
     tidyr,
     scales,
-    ggplot2
+    ggplot2,
+    leaflet,
+    rlang,
+    methods,
+    MASS

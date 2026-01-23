@@ -2,7 +2,7 @@
 # Fit INLA traffic model ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#' Fit INLA Model for Traffic Volume Prediction
+#' Fit INLA model for traffic volume prediction
 #'
 #' @param data Data frame containing traffic data with required columns: id, aadt
 #' @param adjacency_matrix Adjacency matrix for spatial Besag term (single matrix, for backward compatibility)
@@ -12,6 +12,7 @@
 #' @param iid_effects Character vector of variable names for IID random effects (default: "roadSystem")
 #' @param spatial_term Formula for spatial random effect (default: Besag proper with constraints)
 #'   Note: spatial_term is only used when adjacency_matrix is provided (single spatial effect)
+#' @param heavy_vehicle Logical. Whether or not the model is for heavy vehicles (using the column "heavyAadt" as response) or all vehicles (using column "aadt"). Default FALSE.
 #' @param family INLA family, either "poisson" or "nbinomial" (default: "poisson")
 #'
 #' @return Object of class "inla_traffic_model" containing:
@@ -135,7 +136,7 @@ fit_inla_model <- function(data,
   message("Preparing data for INLA model...")
 
   # Start with response variable
-  formula_full <- as.formula(paste(response, "~ 1"))
+  formula_full <- stats::as.formula(paste(response, "~ 1"))
 
   # Add spatial term(s)
   if (use_single_spatial) {
@@ -143,7 +144,7 @@ fit_inla_model <- function(data,
     data$spatial.idx <- 1:nrow(data)
 
     # Add single spatial term
-    formula_full <- update(formula_full, spatial_term)
+    formula_full <- stats::update(formula_full, spatial_term)
 
   } else if (use_multiple_spatial) {
     # Add multiple spatial terms
@@ -152,7 +153,7 @@ fit_inla_model <- function(data,
       adj_mat <- adjacency_matrices[[i]]
 
       # Build spatial term for this effect
-      spatial_formula <- as.formula(
+      spatial_formula <- stats::as.formula(
         paste0("~ . + f(", spatial_id,
                ", model = 'besagproper'",
                ", graph = adjacency_matrices[[", i, "]]",
@@ -160,7 +161,7 @@ fit_inla_model <- function(data,
                ", constr = TRUE)")
       )
 
-      formula_full <- update(formula_full, spatial_formula)
+      formula_full <- stats::update(formula_full, spatial_formula)
     }
   }
 
@@ -177,8 +178,8 @@ fit_inla_model <- function(data,
   if (length(all.vars(fixed_effects)) > 0) {
     # Extract right-hand side of fixed_effects formula as a character string
     fixed_terms <- as.character(fixed_effects)[2]  # [2] gets the RHS of the formula
-    formula_full <- update(formula_full,
-                           as.formula(paste("~ . + ", fixed_terms)))
+    formula_full <- stats::update(formula_full,
+                           stats::as.formula(paste("~ . + ", fixed_terms)))
   }
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -206,7 +207,7 @@ fit_inla_model <- function(data,
     pred = round(model$summary.fitted.values[, "0.5quant"]),
     sd = round(model$summary.fitted.values[, "sd"])
   ) |>
-    setNames(c("id", paste0("inla_pred", suffix), paste0("inla_sd", suffix)))
+    stats::setNames(c("id", paste0("inla_pred", suffix), paste0("inla_sd", suffix)))
 
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
