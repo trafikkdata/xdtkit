@@ -90,7 +90,7 @@ predictions_total <- dplyr::full_join(prepared_traffic_links, inla_model_total$p
 balanced_model_total <- balance_predictions(data = predictions_total,
                                       nodes = nodes,
                                       balancing_grouping_variable = clusters,
-                                      nodes_to_balance = "complete_nodes",
+                                      nodes_to_balance = "complete nodes",
                                       year = year)
 
 predictions_total <- dplyr::full_join(predictions_total, balanced_model_total$balanced_res)
@@ -121,7 +121,7 @@ predictions_heavy <- dplyr::full_join(prepared_traffic_links, inla_model_heavy$p
 balanced_model_heavy <- balance_predictions(data = predictions_heavy,
                                       nodes = nodes,
                                       balancing_grouping_variable = clusters,
-                                      nodes_to_balance = "complete_nodes",
+                                      nodes_to_balance = "complete nodes",
                                       heavy_vehicle = TRUE,
                                       year = year)
 
