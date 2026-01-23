@@ -47,7 +47,7 @@ calculate_bus_aadt <- function(stops_on_traffic_links_data,
     ) |>
     dplyr::mutate(
       # Determine aggregation method
-      bus_aadt = calculate_aggregated_aadt(
+      bus_aadt = calculate_aggregated_bus_aadt(
         stopsServeDifferentBuses, stopAggregatesDirections, total_buses, mean_buses, days_in_year
       )#,
       # Calculate temporal uncertainty
@@ -80,7 +80,7 @@ calculate_bus_aadt <- function(stops_on_traffic_links_data,
 #' @param mean_buses Mean buses per stop on the link
 #' @param days_in_year Number of collection days
 #' @return Daily average traffic volume (directional)
-calculate_aggregated_aadt <- function(stopsServeDifferentBuses,
+calculate_aggregated_bus_aadt <- function(stopsServeDifferentBuses,
                                       stopAggregatesDirections,
                                       total_buses,
                                       mean_buses,
