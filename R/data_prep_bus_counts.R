@@ -1,22 +1,16 @@
-#' Calculate Bus-Based AADT Estimates
+#' Calculate bus-based AADT estimates
 #'
 #' Converts bus stop counts into AADT estimates on traffic links with uncertainty.
 #'
 #' @param stops_on_traffic_links_data Data frame linking bus stops to traffic links
 #' @param bus_counts_data Data frame with bus counts by stop (columns: stopPointRef, no_of_buses)
 #' @param year The year the data were collected
-#' @param cv_uncertainty Coefficient of variation for count uncertainty (default: 1.06)
-#' @param location_uncertainties The uncertainty connected to how certain we are that
-#'   the bus stop count represents the assigned traffic link.
-#'   Named vector with entries "High", "Medium", and "Low", for example c(High = 0.1, Medium = 0.2, Low = 0.3)
 #'
 #' @return Data frame with columns: id, stopPointRef, bus_aadt, bus_sd, stopCertainty
 #' @export
 calculate_bus_aadt <- function(stops_on_traffic_links_data,
                                bus_counts_data,
-                               year,
-                               cv_uncertainty = 1.06,
-                               location_uncertainties = c(High = 0.1, Medium = 0.2, Low = 0.3)) {
+                               year) {
 
   # Find number of days in year
   date_common <- as.Date(paste0(year, "-01-01"))
@@ -48,7 +42,7 @@ calculate_bus_aadt <- function(stops_on_traffic_links_data,
       n_stops = dplyr::n(),
       total_buses = sum(no_of_buses, na.rm = TRUE),
       mean_buses = mean(no_of_buses, na.rm = TRUE),
-      sd_buses = if (dplyr::n() > 1) stats::sd(no_of_buses, na.rm = TRUE) else NA_real_,
+      #sd_buses = if (dplyr::n() > 1) stats::sd(no_of_buses, na.rm = TRUE) else NA_real_,
       .groups = "drop"
     ) |>
     dplyr::mutate(
@@ -75,7 +69,7 @@ calculate_bus_aadt <- function(stops_on_traffic_links_data,
 }
 
 
-#' Calculate Aggregated AADT from Bus Counts
+#' Calculate aggregated AADT from bus counts
 #'
 #' Determines whether to sum or average bus counts based on stop configuration,
 #' and adjusts for directional aggregation when needed.
@@ -106,7 +100,7 @@ calculate_aggregated_aadt <- function(stopsServeDifferentBuses,
 }
 
 
-#' Calculate Uncertainty for Bus AADT
+#' Calculate uncertainty for bus AADT
 #'
 #' Estimates uncertainty from variation between bus stops and sample size,
 #' adjusting for directional aggregation when needed.
@@ -144,28 +138,8 @@ calculate_bus_uncertainty <- function(stopsServeDifferentBuses,
 }
 
 
-#' Add Location Uncertainty to Bus AADT
-#'
-#' Inflates uncertainty based on confidence in stop-to-link assignment.
-#'
-#' @param bus_aadt_data Data frame with bus_aadt, bus_sd, stopCertainty columns
-#' @param location_uncertainties Named vector: c(High = x, Medium = y, Low = z)
-#' @return Data frame with adjusted bus_sd
-add_location_uncertainty <- function(bus_aadt_data, location_uncertainties) {
-  bus_aadt_data |>
-    dplyr::mutate(
-      bus_sd = dplyr::case_when(
-        is.na(stopCertainty) | stopCertainty == "" ~ bus_sd,
-        stopCertainty == "High" ~ bus_sd + location_uncertainties["High"] * bus_aadt,
-        stopCertainty == "Medium" ~ bus_sd + location_uncertainties["Medium"] * bus_aadt,
-        stopCertainty == "Low" ~ bus_sd + location_uncertainties["Low"] * bus_aadt,
-        TRUE ~ bus_sd  # Safety catch
-      )
-    )
-}
 
-
-#' Filter Bus AADT by Certainty Level
+#' Filter bus AADT by certainty level
 #'
 #' Keeps only bus estimates meeting minimum certainty threshold.
 #'
@@ -244,6 +218,7 @@ filter_by_certainty <- function(bus_aadt_data, lowest_certainty) {
 #'   id = c("L001", "L002", "L003", "L004"),
 #'   parentTrafficLinkId = c("P001", "P001", "P002", "P002"),
 #'   aadt = c(5000, NA, 3000, NA),
+#'   heavyAadt = c(500, NA, NA, NA),
 #'   traffic_volume_source = c("continuous", NA, "periodic", NA),
 #'   traffic_volume_year = c(2024, NA, 2024, NA)
 #' )
