@@ -1,0 +1,115 @@
+reference:
+  - title: "Data ---- "
+    contents:
+      - county_names
+      - municipality_names
+
+  - title: "Data preprocessing"
+
+  - subtitle: "Traffic links"
+    desc: "Functions for preprocessing the traffic links"
+    contents:
+      - preprocess_traffic_links
+      - validate_input_data
+      - add_county
+      - add_geometries
+      - add_heavy_aadt
+      - add_logLastYear
+      - add_logLength
+      - add_municipality
+      - add_roadSystem
+      - process_list_columns
+      - remove_list_columns
+      - extract_smallest_element
+      - safely_extract_first_element
+      - get_best_traffic_volume
+      - process_traffic_volume
+      - flatten_df
+      - round_and_check_aadt
+      - standardize_data_types
+      - fill_missing_values
+      - remove_redundant_columns
+      - assign_traffic_volume_source
+
+  - subtitle: "Bus data"
+    desc: "Functions for preprocessing the bus data"
+    contents:
+      - calculate_aggregated_bus_aadt
+      - calculate_bus_aadt
+      - calculate_bus_uncertainty
+      - filter_by_certainty
+      - join_bus_to_traffic
+
+  - subtitle: "Data preprocessing - Traffic nodes"
+    desc: "Functions for preprocessing the nodes"
+    contents:
+      - identify_unbalanceable_nodes
+
+  - title: "INLA model"
+
+  - subtitle: "Adjacency matrix"
+    contents:
+      - build_adjacency_matrix
+
+  - subtitle: "Model fitting"
+    contents:
+      - fit_inla_model
+
+  - title: "Balancing"
+
+  - subtitle: "Clustering"
+    contents:
+      - strategic_network_clustering
+      - find_neighboring_clusters
+      - merge_small_clusters
+      - assign_barriers_to_clusters
+      - assign_measurements_to_clusters
+
+  - subtitle: "Incidence matrix"
+    contents:
+      - build_incidence_matrix
+      - remove_incomplete_nodes
+      - process_turning_movements
+      - create_flow_nodes
+      - find_connected_components
+      - determine_flow_type
+
+  - subtitle: "Measurement error"
+    contents:
+      - build_measurement_matrix
+      - calculate_measurement_error
+
+  - subtitle: "Modelling"
+    desc: "Functions for running the overall balancing procedure."
+    contents:
+      - balance_predictions
+      - balance_group_predictions
+
+  - title: "Visualization"
+
+  - subtitle: "Uncertainty"
+    desc: "Plot prediction uncertainty and coefficient of variation"
+    contents:
+      - plot_prediction_uncertainty
+      - plot_prediction_cv
+      - plot_prediction_relative_uncertainty_histogram
+
+  - subtitle: "Comparisons"
+    desc: "Compare predictions with other values"
+    contents:
+      - plot_predictions_against_last_year
+
+  - subtitle: "Maps"
+    desc: "Compare predictions with other values"
+    contents:
+      - plot_traffic_links_map
+
+  - title: "Publishing"
+    contents:
+      - upload_df_to_github_release
+
+  - title: "Utilities"
+    contents:
+      - nvdb_objects
+
+
