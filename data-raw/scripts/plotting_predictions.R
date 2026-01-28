@@ -1,8 +1,8 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Load data
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-predictions_total <- readRDS("data-raw/predictions_total.rds")
-predictions_heavy <- readRDS("data-raw/predictions_heavy.rds")
+predictions_total <- readRDS("data-raw/results/predictions_total.rds")
+predictions_heavy <- readRDS("data-raw/results/predictions_heavy.rds")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Examining total AADT results
