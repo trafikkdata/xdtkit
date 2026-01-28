@@ -14,6 +14,7 @@
 #'   Note: spatial_term is only used when adjacency_matrix is provided (single spatial effect)
 #' @param heavy_vehicle Logical. Whether or not the model is for heavy vehicles (using the column "heavyAadt" as response) or all vehicles (using column "aadt"). Default FALSE.
 #' @param family INLA family, either "poisson" or "nbinomial" (default: "poisson")
+#' @param verbose Passed directly to INLA. If TRUE, this provides additional modelling details which can be useful for debugging.
 #'
 #' @return Object of class "inla_traffic_model" containing:
 #'   \item{predictions}{Data frame with id, pred (posterior median), sd (posterior SD)}
@@ -29,10 +30,6 @@
 #'   iid_effects = "roadSystem",
 #'   family = "poisson")
 #'
-#'
-#'
-#'
-#'
 #' }
 #' @export
 fit_inla_model <- function(data,
@@ -47,7 +44,8 @@ fit_inla_model <- function(data,
                                               adjust.for.con.comp = FALSE,
                                               constr = TRUE),
                            heavy_vehicle = FALSE,
-                           family = "poisson") {
+                           family = "poisson",
+                           verbose = FALSE) {
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Input validation ----
@@ -191,7 +189,8 @@ fit_inla_model <- function(data,
   model <- INLA::inla(formula_full,
                       family = family,
                       data = data,
-                      control.predictor = list(link = 1))
+                      control.predictor = list(link = 1),
+                      verbose = verbose)
 
   message("Model fitting complete.")
 
