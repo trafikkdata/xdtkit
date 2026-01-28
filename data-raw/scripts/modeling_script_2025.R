@@ -6,7 +6,7 @@ raw_path <- "data-raw/"
 
 # Traffic links: Load and preprocess
 directed_traffic_links <- jsonlite::fromJSON(paste0(raw_path, "raw/directed-traffic-links-", year, ".json"))
-preprocessed_traffic_links <- preprocess_traffic_links(directed_traffic_links, year = 2024)
+preprocessed_traffic_links <- preprocess_traffic_links(directed_traffic_links, year = year)
 
 missing_counts <- colSums(is.na(preprocessed_traffic_links))
 missing_counts[missing_counts > 0]
@@ -15,7 +15,7 @@ missing_counts[missing_counts > 0]
 stops_on_traffic_links <- read.csv(paste0(raw_path, "raw/Trafikklenker med holdeplasser ", year, ".csv"))
 bus_counts <- read.csv(paste0(raw_path, "raw/holdeplasspasseringer_entur_", year, ".csv"))
 
-bus_aadt <- calculate_bus_aadt(stops_on_traffic_links, bus_counts, year = 2025)
+bus_aadt <- calculate_bus_aadt(stops_on_traffic_links, bus_counts, year = year)
 
 # Fill missing values and add bus data
 prepared_traffic_links <- fill_missing_values(
@@ -23,6 +23,7 @@ prepared_traffic_links <- fill_missing_values(
   unknown_impute_columns = c("functionClass", "highestSpeedLimit", "lowestSpeedLimit","maxLanes", "minLanes"),
   mode_impute_columns = c("hasOnlyPublicTransportLanes"),
   median_impute_columns = c("lastYearAadt_aadt", "lastYearAadt_heavyRatio")) |>
+  remove_negative_aadt() |>
   add_logLastYear() |>
   join_bus_to_traffic(bus_aadt)
 
@@ -39,14 +40,33 @@ adjacency_matrix <- build_adjacency_matrix(prepared_traffic_links,
                                            exclude_public_transport = TRUE)
 
 # Balancing clusters
-clusters <- strategic_network_clustering(prepared_traffic_links)
+clusters <- strategic_network_clustering(
+  data = prepared_traffic_links,
+  boundary_links = c("Trafikkdata_continuous", "AutoPASS"),
+  extra_boundary_links = c("0.47813092@181362-0.69434556@181186", # TL vest for Oslo
+                           "0.64310018@971787-0.44481682@971788",# TL'er øst for Oslo
+                           "0.59497974@971566-0.82908906@444258",
+                           "0.31944922@443497-0.40997724@971559",
+                           "0.51111532@971558-0.31944922@443497",
+                           "0.78140309@971504-0.63295502@443465",
+                           "0.65120232-0.91722091@705187", # TL'er nord-øst for Oslo
+                           "0.69089123@704623-0.49119695@705214",
+                           "0.0@2472765-0.55746674@2472766", # Tl'er nord for Oslo
+                           "0.9628257@1060294-0.68755836@1060295"
+                           ),
+  year = year)
 
+data_with_clusters <- dplyr::left_join(prepared_traffic_links, clusters,
+                                       by = join_by(parentTrafficLinkId == id))
+table(data_with_clusters$cluster_id)
+plot_traffic_links_simple_map(dplyr::filter(data_with_clusters, cluster_id == 18),
+                              color_by = "traffic_volume_source")
 
 # Save everything (prepared_traffic_links, nodes, adjacency matrix, clusters)
-saveRDS(prepared_traffic_links, paste0(raw_path, "prepared/prepared_traffic_links", year, ".rds"))
-saveRDS(nodes, paste0(raw_path, "prepared/prepared_nodes", year, ".rds"))
-saveRDS(adjacency_matrix, paste0(raw_path, "prepared/adjacency_matrix", year, ".rds"))
-saveRDS(clusters, paste0(raw_path, "prepared/clusters", year, ".rds"))
+saveRDS(prepared_traffic_links, paste0(raw_path, "prepared_data/prepared_traffic_links", year, ".rds"))
+saveRDS(nodes, paste0(raw_path, "prepared_data/prepared_nodes", year, ".rds"))
+saveRDS(adjacency_matrix, paste0(raw_path, "prepared_data/adjacency_matrix", year, ".rds"))
+saveRDS(clusters, paste0(raw_path, "prepared_data/clusters", year, ".rds"))
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,10 +74,10 @@ saveRDS(clusters, paste0(raw_path, "prepared/clusters", year, ".rds"))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Load data
-prepared_traffic_links <- readRDS(paste0(raw_path, "prepared/prepared_traffic_links", year, ".rds"))
-nodes <- readRDS(paste0(raw_path, "prepared/prepared_nodes", year, ".rds"))
-adjacency_matrix <- readRDS(paste0(raw_path, "prepared/adjacency_matrix", year, ".rds"))
-clusters <- readRDS(paste0(raw_path, "prepared/clusters", year, ".rds"))
+prepared_traffic_links <- readRDS(paste0(raw_path, "prepared_data/prepared_traffic_links", year, ".rds"))
+nodes <- readRDS(paste0(raw_path, "prepared_data/prepared_nodes", year, ".rds"))
+adjacency_matrix <- readRDS(paste0(raw_path, "prepared_data/adjacency_matrix", year, ".rds"))
+clusters <- readRDS(paste0(raw_path, "prepared_data/clusters", year, ".rds"))
 
 covariates <- ~ functionalRoadClass:maxLanes +
   functionalRoadClass:roadCategory +
