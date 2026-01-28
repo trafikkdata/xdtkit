@@ -114,3 +114,7 @@ utils::globalVariables(c(
   "density", "n", "label", "unbalanceable_node", "heavyAadt"
 
   ))
+
+# Imported to satisfy R CMD check
+#' @importFrom tibble tibble
+NULL
