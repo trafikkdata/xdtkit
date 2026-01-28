@@ -8,7 +8,8 @@ strategic_network_clustering(
   data,
   year,
   boundary_links = c("Trafikkdata_continuous"),
-  extra_boundary_links = NULL
+  extra_boundary_links = NULL,
+  heavy_vehicle = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ strategic_network_clustering(
 \item{boundary_links}{Which traffic_volume_source values will be used as boundary points. Default is only Traffikdata_continuous.}
 
 \item{extra_boundary_links}{A vector with any additional parentTrafficLinkId's to be used as boundaries, regardless of traffic volume source and age. This can be useful if the clusters are very large without allowing these.}
+
+\item{heavy_vehicle}{If TRUE, only uses data sources that have heavy vehicle counts as boundaries.}
 }
 \value{
 A data frame with columns:
