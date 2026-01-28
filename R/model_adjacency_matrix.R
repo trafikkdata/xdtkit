@@ -37,46 +37,65 @@
 build_adjacency_matrix <- function(link_data, exclude_public_transport = FALSE) {
   n_links <- nrow(link_data)
 
-  # Create all possible pairs and check for shared nodes
-  link_pairs <- expand.grid(i = 1:n_links, j = 1:n_links)
-  link_pairs <- link_pairs[link_pairs$i != link_pairs$j, ]  # remove self-pairs
+  message("Building adjacency matrix for ", n_links, " links...")
 
-  # Check if pairs share nodes
-  shared_node <- (
-    (link_data$startTrafficNodeId[link_pairs$i] == link_data$startTrafficNodeId[link_pairs$j]) |
-      (link_data$startTrafficNodeId[link_pairs$i] == link_data$endTrafficNodeId[link_pairs$j]) |
-      (link_data$endTrafficNodeId[link_pairs$i] == link_data$startTrafficNodeId[link_pairs$j]) |
-      (link_data$endTrafficNodeId[link_pairs$i] == link_data$endTrafficNodeId[link_pairs$j])
-  )
+  # Create node-to-links mapping for efficient lookup
+  # For each node, find all links that start or end at that node
+  start_nodes <- link_data$startTrafficNodeId
+  end_nodes <- link_data$endTrafficNodeId
+
+  # Create lists of link indices for each node
+  all_nodes <- unique(c(start_nodes, end_nodes))
+
+  # Initialize vectors to store i, j pairs for adjacency
+  i_vec <- integer()
+  j_vec <- integer()
+
+  message("Finding adjacent links...")
+
+  # For each unique node, find all links connected to it
+  for (node in all_nodes) {
+    # Find all links that touch this node
+    links_at_node <- which(start_nodes == node | end_nodes == node)
+
+    # If more than one link at this node, they're all adjacent to each other
+    if (length(links_at_node) > 1) {
+      # Create all pairs of links at this node
+      pairs <- utils::combn(links_at_node, 2)
+      i_vec <- c(i_vec, pairs[1, ], pairs[2, ])
+      j_vec <- c(j_vec, pairs[2, ], pairs[1, ])
+    }
+  }
+
+  message("Building sparse matrix from ", length(i_vec), " adjacency pairs...")
 
   # Build sparse matrix
   adj_sparse <- Matrix::sparseMatrix(
-    i = link_pairs$i[shared_node],
-    j = link_pairs$j[shared_node],
+    i = i_vec,
+    j = j_vec,
     x = 1,
-    dims = c(n_links, n_links)
+    dims = c(n_links, n_links),
+    symmetric = FALSE  # We'll make it symmetric below
   )
 
-  # Make it symmetric manually
+  # Make it symmetric (shouldn't be necessary given our construction, but just in case)
   adj_sparse <- adj_sparse | Matrix::t(adj_sparse)
 
-  # Convert to numeric at the end for consistency
+  # Convert to numeric for consistency
   adj_sparse <- methods::as(adj_sparse, "dMatrix")
-
 
   # Exclude public transport links if requested
   if (exclude_public_transport) {
     public_transport_idx <- which(link_data$hasOnlyPublicTransportLanes)
     if (length(public_transport_idx) > 0) {
-      # Convert to numeric matrix temporarily to avoid logical coercion warning
+      message("Excluding ", length(public_transport_idx), " public transport links...")
       adj_sparse[public_transport_idx, ] <- 0
       adj_sparse[, public_transport_idx] <- 0
-      # Drop explicit zeros to keep it sparse
       adj_sparse <- Matrix::drop0(adj_sparse)
     }
   }
 
+  message("Adjacency matrix complete: ", Matrix::nnzero(adj_sparse), " non-zero entries")
+
   return(adj_sparse)
 }
-
-
