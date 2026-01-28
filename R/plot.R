@@ -582,6 +582,7 @@ plot_prediction_relative_uncertainty_histogram <- function(directed_predictions,
 #'   is "RdYlGn" (reversed so low=green, high=red).
 #' @param opacity Numeric between 0 and 1 controlling line opacity. Default is 0.8.
 #' @param weight Numeric controlling line width. Default is 3.
+#' @param single_color If the traffic links should all be the same color, this can be specified.
 #'
 #' @return A leaflet map object showing traffic links with interactive popups.
 #'
@@ -610,13 +611,15 @@ plot_prediction_relative_uncertainty_histogram <- function(directed_predictions,
 #' @importFrom sf st_transform
 #'
 #' @export
+
 plot_traffic_links_map <- function(directed_predictions,
                                    color_by = "uncertainty_category",
                                    heavy_vehicle = FALSE,
                                    balanced = TRUE,
                                    palette = "RdYlGn",
                                    opacity = 0.8,
-                                   weight = 3) {
+                                   weight = 3,
+                                   single_color = NULL) {
   # Add traffic link geometries
   directed_predictions <- add_geometries(directed_predictions)
 
@@ -677,51 +680,188 @@ plot_traffic_links_map <- function(directed_predictions,
     map_data[[color_by]]
   )
 
-  # Determine if color_by is categorical or continuous
-  is_categorical <- is.factor(map_data[[color_by]]) ||
-    is.character(map_data[[color_by]]) ||
-    length(unique(map_data[[color_by]])) <= 10
+  nvdb <- nvdb_objects()
 
-  # Create color palette
-  # Create color palette
-  if (is_categorical) {
-    # For categorical variables
-    unique_values <- unique(map_data[[color_by]])
-    # Handle ordered factors for uncertainty categories
-    if (color_by == "uncertainty_category" ||
-        all(c("low", "medium", "high") %in% tolower(as.character(unique_values)))) {
-      # Order levels appropriately
-      ordered_levels <- c("low", "medium", "high")
-      map_data[[color_by]] <- factor(
-        as.character(map_data[[color_by]]),
-        levels = ordered_levels
+  # Create leaflet map
+  m <- leaflet::leaflet(
+    map_data,
+    options = leaflet::leafletOptions(crs = nvdb$nvdb_crs, zoomControl = TRUE)) |>
+    leaflet::addTiles(urlTemplate = nvdb$nvdb_url,
+                      attribution = nvdb$nvdb_attribution)
+
+  # Add polylines with or without color mapping
+  if (!is.null(single_color)) {
+    m <- m |>
+      leaflet::addPolylines(
+        color = single_color,
+        weight = weight,
+        opacity = opacity,
+        popup = ~popup_text,
+        highlightOptions = leaflet::highlightOptions(
+          weight = weight + 2,
+          color = "white",
+          bringToFront = TRUE
+        )
       )
-      pal <- leaflet::colorFactor(
-        palette = c("green", "orange", "red"),
-        domain = ordered_levels,
-        levels = ordered_levels
-      )
-    } else {
-      pal <- leaflet::colorFactor(
-        palette = palette,
-        domain = unique_values
-      )
-    }
   } else {
-    # For continuous variables
-    # Reverse palette if it's RdYlGn so low values are green
-    if (palette == "RdYlGn") {
-      pal <- leaflet::colorNumeric(
-        palette = palette,
-        domain = map_data[[color_by]],
-        reverse = TRUE
-      )
+    # Determine if color_by is categorical or continuous
+    is_categorical <- is.factor(map_data[[color_by]]) ||
+      is.character(map_data[[color_by]]) ||
+      length(unique(map_data[[color_by]])) <= 10
+
+    # Create color palette
+    if (is_categorical) {
+      # For categorical variables
+      unique_values <- unique(map_data[[color_by]])
+      # Handle ordered factors for uncertainty categories
+      if (color_by == "uncertainty_category" ||
+          all(c("low", "medium", "high") %in% tolower(as.character(unique_values)))) {
+        # Order levels appropriately
+        ordered_levels <- c("low", "medium", "high")
+        map_data[[color_by]] <- factor(
+          as.character(map_data[[color_by]]),
+          levels = ordered_levels
+        )
+        pal <- leaflet::colorFactor(
+          palette = c("green", "orange", "red"),
+          domain = ordered_levels,
+          levels = ordered_levels
+        )
+      } else {
+        pal <- leaflet::colorFactor(
+          palette = palette,
+          domain = unique_values
+        )
+      }
     } else {
-      pal <- leaflet::colorNumeric(
-        palette = palette,
-        domain = map_data[[color_by]]
-      )
+      # For continuous variables
+      # Reverse palette if it's RdYlGn so low values are green
+      if (palette == "RdYlGn") {
+        pal <- leaflet::colorNumeric(
+          palette = palette,
+          domain = map_data[[color_by]],
+          reverse = TRUE
+        )
+      } else {
+        pal <- leaflet::colorNumeric(
+          palette = palette,
+          domain = map_data[[color_by]]
+        )
+      }
     }
+
+    m <- m |>
+      leaflet::addPolylines(
+        color = ~pal(map_data[[color_by]]),
+        weight = weight,
+        opacity = opacity,
+        popup = ~popup_text,
+        highlightOptions = leaflet::highlightOptions(
+          weight = weight + 2,
+          color = "white",
+          bringToFront = TRUE
+        )
+      ) |>
+      leaflet::addLegend(
+        position = "bottomright",
+        pal = pal,
+        values = ~map_data[[color_by]],
+        title = color_by,
+        opacity = opacity
+      )
+  }
+
+  return(m)
+}
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# plot traffic links simple map ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#' Plot traffic links on an interactive map
+#'
+#' Creates an interactive leaflet map displaying traffic links from the Norwegian
+#' road database. Links can be displayed in a single color or colored by a variable.
+#'
+#' @param link_data A data frame containing at least an 'id' column with traffic
+#'   link IDs. Additional columns can be included for coloring and popups.
+#' @param color Character string specifying the color for all links when `color_by`
+#'   is NULL. Default is "blue". Can be any valid CSS color name or hex code.
+#' @param color_by Character string specifying the name of a column in `link_data`
+#'   to use for coloring the links. When NULL (default), all links use the same
+#'   color specified by `color`.
+#' @param palette Character string specifying the color palette to use when
+#'   `color_by` is specified. Default is "RdYlGn". For continuous variables,
+#'   RdYlGn is automatically reversed so low values are green.
+#' @param opacity Numeric value between 0 and 1 controlling the opacity of the
+#'   links. Default is 0.8.
+#' @param weight Numeric value controlling the width of the link lines. Default is 3.
+#' @param popup_columns Character vector specifying which columns from `link_data`
+#'   to include in the popup text. When NULL (default), only the link ID is shown.
+#'
+#' @return A leaflet map object that can be displayed or further customized.
+#'
+#' @examples
+#' \dontrun{
+#' # Simple map with all links in blue
+#' my_links <- data.frame(id = c("12345", "67890"))
+#' plot_traffic_links_simple_map(my_links)
+#'
+#' # Color by a variable
+#' my_links$road_type <- c("highway", "local")
+#' plot_traffic_links_simple_map(my_links, color_by = "road_type")
+#'
+#' # Custom popup with multiple columns
+#' plot_traffic_links_simple_map(
+#'   my_links,
+#'   color_by = "road_type",
+#'   popup_columns = c("id", "road_type")
+#' )
+#' }
+#'
+#' @export
+plot_traffic_links_simple_map <- function(link_data,
+                                          color = "blue",
+                                          color_by = NULL,
+                                          palette = "RdYlGn",
+                                          opacity = 0.8,
+                                          weight = 3,
+                                          popup_columns = NULL) {
+  # Ensure link_data has an id column
+  if (!"id" %in% names(link_data)) {
+    stop("link_data must contain an 'id' column with traffic link IDs")
+  }
+
+  # Add traffic link geometries
+  link_data <- add_geometries(link_data)
+
+  # Ensure data is sf object
+  if (!inherits(link_data, "sf")) {
+    stop("link_data must be an sf object with geometry after add_geometries()")
+  }
+
+  # Transform to WGS84 for leaflet
+  map_data <- sf::st_transform(link_data, crs = 4326)
+
+  # Create popup text
+  if (!is.null(popup_columns)) {
+    # Build popup from specified columns
+    popup_parts <- sapply(popup_columns, function(col) {
+      if (col %in% names(map_data)) {
+        sprintf("<strong>%s:</strong> %s", col, map_data[[col]])
+      } else {
+        NULL
+      }
+    })
+    popup_parts <- popup_parts[!sapply(popup_parts, is.null)]
+    map_data$popup_text <- apply(
+      do.call(cbind, popup_parts),
+      1,
+      function(x) paste(x, collapse = "<br>")
+    )
+  } else {
+    # Default: just show the ID
+    map_data$popup_text <- sprintf("<strong>Link ID:</strong> %s", map_data$id)
   }
 
   nvdb <- nvdb_objects()
@@ -731,26 +871,79 @@ plot_traffic_links_map <- function(directed_predictions,
     map_data,
     options = leaflet::leafletOptions(crs = nvdb$nvdb_crs, zoomControl = TRUE)) |>
     leaflet::addTiles(urlTemplate = nvdb$nvdb_url,
-                      attribution = nvdb$nvdb_attribution) |>
-    leaflet::addPolylines(
-      color = ~pal(map_data[[color_by]]),
-      weight = weight,
-      opacity = opacity,
-      popup = ~popup_text,
-      #label = ~as.character(id),
-      highlightOptions = leaflet::highlightOptions(
-        weight = weight + 2,
-        color = "white",
-        bringToFront = TRUE
+                      attribution = nvdb$nvdb_attribution)
+
+  # Add polylines with or without color mapping
+  if (!is.null(color_by)) {
+    # Check that color_by column exists
+    if (!color_by %in% names(map_data)) {
+      stop(sprintf("Column '%s' not found in link_data", color_by))
+    }
+
+    # Determine if color_by is categorical or continuous
+    is_categorical <- is.factor(map_data[[color_by]]) ||
+      is.character(map_data[[color_by]]) ||
+      length(unique(map_data[[color_by]])) <= 10
+
+    # Create color palette
+    if (is_categorical) {
+      # For categorical variables
+      unique_values <- unique(map_data[[color_by]])
+      pal <- leaflet::colorFactor(
+        palette = palette,
+        domain = unique_values
       )
-    ) |>
-    leaflet::addLegend(
-      position = "bottomright",
-      pal = pal,
-      values = ~map_data[[color_by]],
-      title = color_by,
-      opacity = opacity
-    )
+    } else {
+      # For continuous variables
+      # Reverse palette if it's RdYlGn so low values are green
+      if (palette == "RdYlGn") {
+        pal <- leaflet::colorNumeric(
+          palette = palette,
+          domain = map_data[[color_by]],
+          reverse = TRUE
+        )
+      } else {
+        pal <- leaflet::colorNumeric(
+          palette = palette,
+          domain = map_data[[color_by]]
+        )
+      }
+    }
+
+    m <- m |>
+      leaflet::addPolylines(
+        color = ~pal(map_data[[color_by]]),
+        weight = weight,
+        opacity = opacity,
+        popup = ~popup_text,
+        highlightOptions = leaflet::highlightOptions(
+          weight = weight + 2,
+          color = "white",
+          bringToFront = TRUE
+        )
+      ) |>
+      leaflet::addLegend(
+        position = "bottomright",
+        pal = pal,
+        values = ~map_data[[color_by]],
+        title = color_by,
+        opacity = opacity
+      )
+  } else {
+    # Use single color
+    m <- m |>
+      leaflet::addPolylines(
+        color = color,
+        weight = weight,
+        opacity = opacity,
+        popup = ~popup_text,
+        highlightOptions = leaflet::highlightOptions(
+          weight = weight + 2,
+          color = "white",
+          bringToFront = TRUE
+        )
+      )
+  }
 
   return(m)
 }

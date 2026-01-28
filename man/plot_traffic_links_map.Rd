@@ -11,7 +11,8 @@ plot_traffic_links_map(
   balanced = TRUE,
   palette = "RdYlGn",
   opacity = 0.8,
-  weight = 3
+  weight = 3,
+  single_color = NULL
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ is "RdYlGn" (reversed so low=green, high=red).}
 \item{opacity}{Numeric between 0 and 1 controlling line opacity. Default is 0.8.}
 
 \item{weight}{Numeric controlling line width. Default is 3.}
+
+\item{single_color}{If the traffic links should all be the same color, this can be specified.}
 }
 \value{
 A leaflet map object showing traffic links with interactive popups.
