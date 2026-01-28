@@ -4,7 +4,12 @@
 \alias{strategic_network_clustering}
 \title{Strategic network clustering for traffic flow balancing}
 \usage{
-strategic_network_clustering(data)
+strategic_network_clustering(
+  data,
+  year,
+  boundary_links = c("Trafikkdata_continuous"),
+  extra_boundary_links = NULL
+)
 }
 \arguments{
 \item{data}{A data frame containing directional traffic link data with columns:
@@ -14,6 +19,12 @@ strategic_network_clustering(data)
   \item{endTrafficNodeId}{ID of the end node}
   \item{aadt}{Traffic measurement value (NA if unmeasured)}
 }}
+
+\item{year}{The current year, used to decide which registration points are recent enough to use ar borders.}
+
+\item{boundary_links}{Which traffic_volume_source values will be used as boundary points. Default is only Traffikdata_continuous.}
+
+\item{extra_boundary_links}{A vector with any additional parentTrafficLinkId's to be used as boundaries, regardless of traffic volume source and age. This can be useful if the clusters are very large without allowing these.}
 }
 \value{
 A data frame with columns:

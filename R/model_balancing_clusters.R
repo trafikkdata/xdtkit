@@ -17,6 +17,9 @@
 #'     \item{endTrafficNodeId}{ID of the end node}
 #'     \item{aadt}{Traffic measurement value (NA if unmeasured)}
 #'   }
+#' @param year The current year, used to decide which registration points are recent enough to use ar borders.
+#' @param boundary_links Which traffic_volume_source values will be used as boundary points. Default is only Traffikdata_continuous.
+#' @param extra_boundary_links A vector with any additional parentTrafficLinkId's to be used as boundaries, regardless of traffic volume source and age. This can be useful if the clusters are very large without allowing these.
 #'
 #' @return A data frame with columns:
 #'   \describe{
@@ -42,14 +45,28 @@
 #' cluster_assignments <- strategic_network_clustering(data)
 #' }
 #' @export
-strategic_network_clustering <- function(data) {
+strategic_network_clustering <- function(data,
+                                         year,
+                                         boundary_links = c("Trafikkdata_continuous"),
+                                         extra_boundary_links = NULL) {
+
   undirected <- data |> dplyr::distinct(parentTrafficLinkId, .keep_all = TRUE) |>
     dplyr::select(parentTrafficLinkId, startTrafficNodeId, endTrafficNodeId)
 
   # Find parent traffic links where both children have data
-  parent_links_with_data <- data |> dplyr::group_by(parentTrafficLinkId) |>
-  # dplyr::summarise(child_link_has_data = all(!is.na(aadt)))
-   dplyr::summarise(child_link_has_data = all(traffic_volume_source == "Continuous"))
+  parent_links_with_data <- data |>
+    dplyr::group_by(parentTrafficLinkId) |>
+    dplyr::summarise(
+      child_link_has_data = all(
+        traffic_volume_source %in% boundary_links &
+          traffic_volume_year %in% c(year, NA) &
+          coverage > 0.05
+      )
+    ) |>
+    dplyr::mutate(
+      child_link_has_data = .data$child_link_has_data |
+        parentTrafficLinkId %in% extra_boundary_links
+    )
 
   undirected <- dplyr::full_join(undirected, parent_links_with_data)
 
