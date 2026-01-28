@@ -1,7 +1,7 @@
 Package: xdtkit
 Type: Package
 Title: XDT kit
-Version: 2024.2.0
+Version: 2024.3.0
 Authors@R: c(
     person(
       "Emma", "Skarstein",
