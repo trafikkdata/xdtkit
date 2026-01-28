@@ -49,15 +49,15 @@ Fit INLA model for traffic volume prediction
 \examples{
 \dontrun{
 # Single spatial effect (backward compatible)
-fit_inla_model(data, adjacency_matrix = adj_matrix)
+fit_inla_model(
+  data = prepared_traffic_links,
+  adjacency_matrix,
+  iid_effects = "roadSystem",
+  family = "poisson")
 
-# Multiple spatial effects (e.g., separate for regular and public transport)
-fit_inla_model(data,
-               adjacency_matrices = list(adj_matrix_regular, adj_matrix_pt),
-               spatial_ids = c("spatial_id_regular", "spatial_id_pt"))
 
-# Custom spatial term (single effect)
-fit_inla_model(data, adj_matrix,
-               spatial_term = ~ f(spatial.idx, model = "bym2", graph = adjacency_matrix))
+
+
+
 }
 }
