@@ -14,7 +14,8 @@ fit_inla_model(
   spatial_term = ~f(spatial.idx, model = "besagproper", graph = adjacency_matrix,
     adjust.for.con.comp = FALSE, constr = TRUE),
   heavy_vehicle = FALSE,
-  family = "poisson"
+  family = "poisson",
+  verbose = FALSE
 )
 }
 \arguments{
@@ -36,6 +37,8 @@ Note: spatial_term is only used when adjacency_matrix is provided (single spatia
 \item{heavy_vehicle}{Logical. Whether or not the model is for heavy vehicles (using the column "heavyAadt" as response) or all vehicles (using column "aadt"). Default FALSE.}
 
 \item{family}{INLA family, either "poisson" or "nbinomial" (default: "poisson")}
+
+\item{verbose}{Passed directly to INLA. If TRUE, this provides additional modelling details which can be useful for debugging.}
 }
 \value{
 Object of class "inla_traffic_model" containing:
@@ -54,10 +57,6 @@ fit_inla_model(
   adjacency_matrix,
   iid_effects = "roadSystem",
   family = "poisson")
-
-
-
-
 
 }
 }
