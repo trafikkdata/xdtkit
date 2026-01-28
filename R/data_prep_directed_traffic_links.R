@@ -310,7 +310,7 @@ standardize_data_types <- function(df){
 #' @export
 round_and_check_aadt <- function(df){
   df$bestDataSourceAadt_trafficVolumeValue <- round(df$bestDataSourceAadt_trafficVolumeValue)
-  df$bestDataSourceAadt_trafficVolumeValue[df$bestDataSourceAadt_trafficVolumeValue < 0] <- 0
+  #df$bestDataSourceAadt_trafficVolumeValue[df$bestDataSourceAadt_trafficVolumeValue < 0] <- 0
 
   return(df)
 }
@@ -333,7 +333,7 @@ assign_traffic_volume_source <- function(df, current_year){
     dplyr::mutate(
       traffic_volume_source = dplyr::case_when(
         bestDataSourceAadt_trafficVolumeType == "DERIVED" ~ "Derived",
-        bestDataSourceAadt_sourceType == "EXTERNAL" & isFerryRoute ~ "Ferry",
+        bestDataSourceAadt_sourceType == "FERJEDATABANKEN" ~ "Ferry",
         bestDataSourceAadt_sourceType == "EXTERNAL" ~ "External_municipal",
         bestDataSourceAadt_sourceType == "TOLL_STATION_AUTOPASS" ~ "AutoPASS",
         bestDataSourceAadt_sourceType == "TRAFIKKDATA" &
@@ -617,6 +617,40 @@ fill_missing_values <- function(df,
 
   return(df)
 
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Remove negative AADT values ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#' Remove negative AADT values
+#'
+#' Sets AADT-related columns to NA when the AADT value is negative.
+#' This handles data quality issues where negative traffic volumes are present.
+#'
+#' @param df A data frame containing traffic data with an 'aadt' column
+#'
+#' @return A data frame with NA values in aadt, heavyAadt, heavyRatio, coverage,
+#'   traffic_volume_source, and traffic_volume_year for rows where aadt < 0
+#'
+#' @export
+remove_negative_aadt <- function(df) {
+  n_negative <- sum(df$aadt < 0, na.rm = TRUE)
+
+  if(n_negative > 0) {
+    warning(sprintf("Removing %d row(s) with negative AADT", n_negative))
+  }
+
+  df <- df |>
+    dplyr::mutate(
+      dplyr::across(
+        c(aadt, heavyAadt, heavyRatio, coverage,
+          traffic_volume_source, traffic_volume_year),
+        ~ dplyr::if_else(aadt < 0, NA, .x)
+      )
+    )
+
+  return(df)
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
