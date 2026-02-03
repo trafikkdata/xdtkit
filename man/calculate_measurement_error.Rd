@@ -45,12 +45,13 @@ This function computes measurement error variances based on:
 }
 \details{
 Parameters list should contain:
-- cv_base_continuous: Base CV for continuous measurements (default: 0.015)
-- cv_base_autopass: Base CV for AutoPASS (default: 0.02)
-- k_missing: Factor for missing data uncertainty (default: 0.5)
-- cv_ferry: CV for ferry data (default: 0.075)
-- cv_external: CV for external municipal data (default: 0.20)
-- cv_bus: CV for bus data (default: 0.15)
-- cv_annual: Annual CV for temporal decay (default: 0.02)
+- cv_base_continuous: Base CV for continuous measurements
+- cv_base_autopass: Base CV for AutoPASS
+- k_missing_continuous: Factor for continuous missing data uncertainty
+- k_missing_periodic: Factor for periodic missing data uncertainty
+- cv_ferry: CV for ferry data
+- cv_external: CV for external municipal data
+- cv_bus: CV for bus data
+- cv_annual: Annual CV for temporal decay
 - cv_max_periodic: Maximum CV for periodic measurements (default: NULL for no cap)
 }

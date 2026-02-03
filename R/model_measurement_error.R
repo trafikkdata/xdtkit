@@ -52,13 +52,14 @@ build_measurement_matrix <- function(data, colname_aadt = "aadt") {
 #'
 #' @details
 #' Parameters list should contain:
-#' - cv_base_continuous: Base CV for continuous measurements (default: 0.015)
-#' - cv_base_autopass: Base CV for AutoPASS (default: 0.02)
-#' - k_missing: Factor for missing data uncertainty (default: 0.5)
-#' - cv_ferry: CV for ferry data (default: 0.075)
-#' - cv_external: CV for external municipal data (default: 0.20)
-#' - cv_bus: CV for bus data (default: 0.15)
-#' - cv_annual: Annual CV for temporal decay (default: 0.02)
+#' - cv_base_continuous: Base CV for continuous measurements
+#' - cv_base_autopass: Base CV for AutoPASS
+#' - k_missing_continuous: Factor for continuous missing data uncertainty
+#' - k_missing_periodic: Factor for periodic missing data uncertainty
+#' - cv_ferry: CV for ferry data
+#' - cv_external: CV for external municipal data
+#' - cv_bus: CV for bus data
+#' - cv_annual: Annual CV for temporal decay
 #' - cv_max_periodic: Maximum CV for periodic measurements (default: NULL for no cap)
 #'
 #' @return Vector of measurement error standard deviations (same length as input data)
@@ -84,7 +85,8 @@ calculate_measurement_error <- function(
     cv_base_autopass = 0.01,      # Base error for AutoPASS
     cv_base_derived = 0.02,
     cv_base_derived_heavy = 0.1,
-    k_missing = 0.5,               # Factor for missing data (0.5 = trust factor curves moderately)
+    k_missing_continuous = 0.56,     # Factor for missing data (0.5 = trust factor curves moderately)
+    k_missing_periodic = 0.45,     # Factor for missing data (0.5 = trust factor curves moderately)
     cv_ferry = 0.03,               # Base error for ferry data
     cv_external = 0.4,             # 20% for external municipal data
     cv_bus = 0.4,                 # 15% for bus data
@@ -134,7 +136,7 @@ calculate_measurement_error <- function(
       }
 
       cv_base <- params$cv_base_continuous
-      cv_missing <- params$k_missing * (1 - cov)
+      cv_missing <- params$k_missing_continuous * (1 - cov)
       cv_total <- sqrt(cv_base^2 + cv_missing^2)
       sigma_measurement[i] <- aadt_val * cv_total
 
@@ -146,7 +148,7 @@ calculate_measurement_error <- function(
 
       # Use same formula as continuous, but coverage is much lower
       cv_base <- params$cv_base_periodic
-      cv_missing <- params$k_missing * (1 - cov)
+      cv_missing <- params$k_missing_periodic * (1 - cov)
       cv_total <- sqrt(cv_base^2 + cv_missing^2)
 
       # Apply cap if specified
@@ -163,7 +165,7 @@ calculate_measurement_error <- function(
       }
 
       cv_base <- params$cv_base_autopass
-      cv_missing <- params$k_missing * (1 - cov)
+      cv_missing <- params$k_missing_continuous * (1 - cov)
       cv_total <- sqrt(cv_base^2 + cv_missing^2)
       sigma_measurement[i] <- aadt_val * cv_total
 
@@ -179,7 +181,7 @@ calculate_measurement_error <- function(
         cv_base <- params$cv_base_derived
       }
 
-      cv_missing <- params$k_missing * (1 - cov)
+      cv_missing <- params$k_missing_continuous * (1 - cov)
       cv_total <- sqrt(cv_base^2 + cv_missing^2)
       sigma_measurement[i] <- aadt_val * cv_total
 
