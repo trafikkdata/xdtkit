@@ -1,7 +1,7 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 1. Preprocess data and create everything that takes time.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-year <- 2025
+year <-  2025
 raw_path <- "data-raw/"
 
 # Traffic links: Load and preprocess
@@ -42,7 +42,7 @@ adjacency_matrix <- build_adjacency_matrix(prepared_traffic_links,
 # Balancing clusters
 clusters <- strategic_network_clustering(
   data = prepared_traffic_links,
-  boundary_links = c("Trafikkdata_continuous", "AutoPASS"),
+  boundary_links = c("Trafikkdata_continuous", "AutoPASS", "Trafikkdata_periodic"),
   extra_boundary_links = c("0.47813092@181362-0.69434556@181186", # TL vest for Oslo
                            "0.64310018@971787-0.44481682@971788",# TL'er øst for Oslo
                            "0.59497974@971566-0.82908906@444258",
