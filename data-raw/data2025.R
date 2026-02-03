@@ -8,8 +8,8 @@ library(dplyr)
 # Loading data from raw files ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-year = 2025
-raw_path = "data-raw/"
+year <- 2025
+raw_path <- "data-raw/"
 
 #raw_links_geo <- sf::st_read(paste0(raw_path, "traffic_links_", year, ".geojson"))
 raw_directed_links_geo <- sf::st_read(paste0(raw_path, "raw/directed_traffic_links_", year, ".geojson"))
