@@ -186,24 +186,3 @@ colSums(is.na(data_2025))
 # An actual release
 #upload_df_to_github_release(data_2025, year = 2025, prerelease = FALSE, overwrite = TRUE)
 
-
-
-
-
-
-
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Visualize the difference ----
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Which links lost connections?
-neighbor_diff <- Matrix::rowSums(adj_matrix_full) - Matrix::rowSums(adj_matrix_excl_pt)
-
-tibble::tibble(
-  link_id = 1:10,
-  has_pt_only = link_data$hasOnlyPublicTransportLanes,
-  neighbors_lost = neighbor_diff
-) |>
-  dplyr::filter(neighbors_lost > 0 | has_pt_only)
