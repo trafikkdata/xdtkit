@@ -613,7 +613,7 @@ plot_prediction_relative_uncertainty_histogram <- function(directed_predictions,
 #' @export
 
 plot_traffic_links_map <- function(directed_predictions,
-                                   color_by = "uncertainty_category",
+                                   color_by = "balanced_pred",
                                    heavy_vehicle = FALSE,
                                    balanced = TRUE,
                                    palette = "RdYlGn",
@@ -659,6 +659,20 @@ plot_traffic_links_map <- function(directed_predictions,
   # Calculate relative uncertainty if not already present
   if (!"relative_uncertainty" %in% names(map_data)) {
     map_data$relative_uncertainty <- map_data[[sd_col]] / map_data[[pred_col]]
+  }
+
+  # Validate required columns
+  required_cols <- c(
+    "id", pred_col, sd_col, aadt_col, last_year_col,
+    "traffic_volume_source", "relative_uncertainty", color_by
+  )
+
+  missing_cols <- setdiff(required_cols, names(map_data))
+  if (length(missing_cols) > 0) {
+    stop(
+      "plot_traffic_links_map: missing required columns: ",
+      paste(missing_cols, collapse = ", ")
+    )
   }
 
   # Create popup text

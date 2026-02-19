@@ -6,7 +6,7 @@
 \usage{
 plot_traffic_links_map(
   directed_predictions,
-  color_by = "uncertainty_category",
+  color_by = "balanced_pred",
   heavy_vehicle = FALSE,
   balanced = TRUE,
   palette = "RdYlGn",

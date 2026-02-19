@@ -288,3 +288,7 @@ plot_prediction_relative_uncertainty_histogram(predictions_total, cap_cv = 1)
 ```
 
 <img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
+
+``` r
+plot_traffic_links_map(predictions_total)
+```
