@@ -20,6 +20,7 @@
 #'   flow conservation constraints. Either "all" (balance at all nodes with no
 #'   filtering), or "complete nodes" (exclude both I-intersections and nodes
 #'   marked as unbalanceable).
+#' @param sparse Logical, should the returned matrix be a sparse matrix? Default is FALSE.
 #'
 #' @return Sparse incidence matrix (A1 in the flow balancing equations) with
 #'   one row per flow node and one column per traffic link. Entry (i,j) is
@@ -42,50 +43,60 @@
 #' as they provide redundant constraints.
 #'
 #' @export
-build_incidence_matrix <- function(nodes, traffic_links, nodes_to_balance){
-  if(!(nodes_to_balance %in% c("all", "complete nodes"))){
+build_incidence_matrix <- function(nodes, traffic_links, nodes_to_balance, sparse = FALSE) {
+  if (!(nodes_to_balance %in% c("all", "complete nodes"))) {
     warning("'nodes_to_balance' should be either 'all' or 'complete nodes'. With the current value, balancing will be done on every node that is not an I-intersection.")
   }
 
-  # Filter out the nodes that appear in the traffic link data
   nodes_in_traffic_links <- unique(c(traffic_links$startTrafficNodeId,
                                      traffic_links$endTrafficNodeId))
 
-
-  if(nodes_to_balance != "all"){
+  if (nodes_to_balance != "all") {
     balancing_nodes <- remove_incomplete_nodes(nodes, nodes_to_balance)
     relevant_nodes <- nodes_in_traffic_links[nodes_in_traffic_links %in% balancing_nodes]
-  }else{
+  } else {
     relevant_nodes <- nodes_in_traffic_links
   }
 
-
-  # Get character vector of traffic link id's
   traffic_link_ids <- traffic_links$id
 
-  # Initialize matrix
-  A1 <- matrix(numeric(0), nrow = 0, ncol = length(traffic_link_ids))
-  colnames(A1) <- traffic_link_ids
+  triplet_i   <- integer(0)
+  triplet_j   <- integer(0)
+  triplet_x   <- numeric(0)
+  row_names   <- character(0)
+  current_row <- 0L
 
-  # Iterate over the traffic nodes
-  # Note: This iterates over the traffic nodes, but some of the traffic nodes
-  # will result in two (or more) rows in the incidence matrix.
-  for(node in relevant_nodes){
-    #print(node)
-    # Get legal turning movements for traffic node
-    node_row <- dplyr::filter(nodes, id == node)
+  for (node in relevant_nodes) {
+    node_row          <- dplyr::filter(nodes, id == node)
     turning_movements <- node_row$legalTurningMovements
 
-    # Process turning movements to get flow nodes and the corresponding row(s)
-    # for the incidence matrix.
-    results <- process_turning_movements(turning_movements_json = turning_movements,
-                                         link_ids = traffic_link_ids,
-                                         node_id = node)
+    results <- process_turning_movements(
+      turning_movements_json = turning_movements,
+      link_ids               = traffic_link_ids,
+      node_id                = node
+    )
 
-    row_in_incidence_matrix <- results$constraint_rows
-    A1 <- rbind(A1, row_in_incidence_matrix)
+    rows <- results$constraint_rows
+    if (nrow(rows) == 0L) next
+
+    nz        <- which(rows != 0, arr.ind = TRUE)
+    triplet_i <- c(triplet_i, nz[, 1L] + current_row)
+    triplet_j <- c(triplet_j, nz[, 2L])
+    triplet_x <- c(triplet_x, rows[nz])
+
+    row_names   <- c(row_names, rownames(rows))
+    current_row <- current_row + nrow(rows)
   }
 
+  A1 <- Matrix::sparseMatrix(
+    i        = triplet_i,
+    j        = triplet_j,
+    x        = triplet_x,
+    dims     = c(current_row, length(traffic_link_ids)),
+    dimnames = list(row_names, traffic_link_ids)
+  )
+
+  if (!sparse) A1 <- as.matrix(A1)
 
   return(A1)
 }
