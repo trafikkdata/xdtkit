@@ -1,8 +1,12 @@
 reference:
-  - title: "Data ---- "
+  - title: "Data"
     contents:
       - county_names
       - municipality_names
+      - buskerud_directed_traffic_links
+      - buskerud_nodes
+      - stops_on_traffic_links
+      - bus_counts
 
   - title: "Data preprocessing"
 
@@ -30,6 +34,7 @@ reference:
       - fill_missing_values
       - remove_redundant_columns
       - assign_traffic_volume_source
+      - remove_negative_aadt
 
   - subtitle: "Bus data"
     desc: "Functions for preprocessing the bus data"
@@ -40,7 +45,7 @@ reference:
       - filter_by_certainty
       - join_bus_to_traffic
 
-  - subtitle: "Data preprocessing - Traffic nodes"
+  - subtitle: "Traffic nodes"
     desc: "Functions for preprocessing the nodes"
     contents:
       - identify_unbalanceable_nodes
@@ -85,6 +90,22 @@ reference:
       - balance_predictions
       - balance_group_predictions
 
+  - title: "Validation"
+    desc: "Validate the predictions in various ways."
+    contents:
+      - calculate_approval_by_segment
+      - calculate_approval_metrics
+      - calculate_eale_threshold
+      - calculate_preapproval_metrics
+      - calculate_sd_of_sum
+      - check_autoapproval
+      - convert_ratio_to_count
+      - estimate_ratio_uncertainty
+      - estimate_standard_error
+      - get_approval_per_group
+      - print_approval_summary
+      - print_preapproval_summary
+
   - title: "Visualization"
 
   - subtitle: "Uncertainty"
@@ -103,6 +124,7 @@ reference:
     desc: "Compare predictions with other values"
     contents:
       - plot_traffic_links_map
+      - plot_traffic_links_simple_map
 
   - title: "Publishing"
     contents:

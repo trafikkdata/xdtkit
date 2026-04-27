@@ -57,7 +57,7 @@ clusters <- strategic_network_clustering(
   year = year)
 
 data_with_clusters <- dplyr::left_join(prepared_traffic_links, clusters,
-                                       by = join_by(parentTrafficLinkId == id))
+                                       by = dplyr::join_by(parentTrafficLinkId == id))
 table(data_with_clusters$cluster_id)
 plot_traffic_links_simple_map(dplyr::filter(data_with_clusters, cluster_id == 18),
                               color_by = "traffic_volume_source")
@@ -116,6 +116,10 @@ balanced_model_total <- balance_predictions(data = predictions_total,
 predictions_total <- dplyr::full_join(predictions_total, balanced_model_total$balanced_res)
 
 saveRDS(predictions_total, "data-raw/results/predictions_total.rds")
+
+
+plot_predictions_against_last_year(predictions_total)
+plot_predictions_against_last_year(predictions_total, balanced = FALSE)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 3.a Run INLA model for heavy AADT.

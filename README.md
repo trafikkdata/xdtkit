@@ -281,6 +281,13 @@ plot_predictions_against_last_year(predictions_total)
 <img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
 
 ``` r
+plot_predictions_against_last_year(predictions_total, balanced = FALSE)
+```
+
+<img src="man/figures/README-unnamed-chunk-13-2.png" width="100%" />
+
+``` r
+
 plot_prediction_relative_uncertainty_histogram(predictions_total, cap_cv = 1)
 #> Warning in plot_prediction_relative_uncertainty_histogram(predictions_total, :
 #> 31 values (1.75%) exceeded relative uncertainty cap of 1.00 and were excluded
@@ -290,5 +297,8 @@ plot_prediction_relative_uncertainty_histogram(predictions_total, cap_cv = 1)
 <img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
 ``` r
-plot_traffic_links_map(predictions_total)
+predictions_total$relative_uncertainty <- predictions_total$balanced_sd/predictions_total$balanced_pred
+
+predictions_total <- predictions_total[which(predictions_total$relative_uncertainty < 0.35), ]
+plot_traffic_links_map(predictions_total, color_by = "relative_uncertainty")
 ```
