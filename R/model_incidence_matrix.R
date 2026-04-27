@@ -70,6 +70,10 @@ build_incidence_matrix <- function(nodes, traffic_links, nodes_to_balance, spars
     node_row          <- dplyr::filter(nodes, id == node)
     turning_movements <- node_row$legalTurningMovements
 
+    if(is.list(turning_movements)){
+      turning_movements <- paste0("[", paste(turning_movements[[1]], collapse = ", "), "]")
+    }
+
     results <- process_turning_movements(
       turning_movements_json = turning_movements,
       link_ids               = traffic_link_ids,
