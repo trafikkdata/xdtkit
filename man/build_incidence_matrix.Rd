@@ -4,7 +4,7 @@
 \alias{build_incidence_matrix}
 \title{Build incidence matrix from traffic links and turning movements}
 \usage{
-build_incidence_matrix(nodes, traffic_links, nodes_to_balance)
+build_incidence_matrix(nodes, traffic_links, nodes_to_balance, sparse = FALSE)
 }
 \arguments{
 \item{nodes}{Data frame containing traffic node data with column
@@ -19,6 +19,8 @@ filtering.}
 flow conservation constraints. Either "all" (balance at all nodes with no
 filtering), or "complete nodes" (exclude both I-intersections and nodes
 marked as unbalanceable).}
+
+\item{sparse}{Logical, should the returned matrix be a sparse matrix? Default is FALSE.}
 }
 \value{
 Sparse incidence matrix (A1 in the flow balancing equations) with
