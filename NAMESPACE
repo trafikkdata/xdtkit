@@ -56,34 +56,44 @@ export(standardize_data_types)
 export(strategic_network_clustering)
 export(upload_df_to_github_release)
 export(validate_input_data)
-importFrom(ggplot2,aes)
-importFrom(ggplot2,annotation_logticks)
-importFrom(ggplot2,geom_abline)
-importFrom(ggplot2,geom_point)
-importFrom(ggplot2,ggplot)
-importFrom(ggplot2,labs)
-importFrom(ggplot2,scale_x_continuous)
-importFrom(ggplot2,scale_y_continuous)
-importFrom(ggplot2,theme_minimal)
-importFrom(httr,DELETE)
-importFrom(httr,GET)
-importFrom(httr,PATCH)
-importFrom(httr,POST)
-importFrom(httr,add_headers)
-importFrom(httr,content)
-importFrom(httr,status_code)
-importFrom(httr,timeout)
-importFrom(httr,upload_file)
-importFrom(jsonlite,toJSON)
-importFrom(jsonlite,write_json)
-importFrom(leaflet,addLegend)
-importFrom(leaflet,addPolylines)
-importFrom(leaflet,addTiles)
-importFrom(leaflet,colorFactor)
-importFrom(leaflet,colorNumeric)
-importFrom(leaflet,leaflet)
-importFrom(rlang,":=")
-importFrom(rlang,.data)
+importFrom(ggplot2,
+  aes,
+  annotation_logticks,
+  geom_abline,
+  geom_point,
+  ggplot,
+  labs,
+  scale_x_continuous,
+  scale_y_continuous,
+  theme_minimal
+)
+importFrom(httr,
+  DELETE,
+  GET,
+  PATCH,
+  POST,
+  add_headers,
+  content,
+  status_code,
+  timeout,
+  upload_file
+)
+importFrom(jsonlite,
+  toJSON,
+  write_json
+)
+importFrom(leaflet,
+  addLegend,
+  addPolylines,
+  addTiles,
+  colorFactor,
+  colorNumeric,
+  leaflet
+)
+importFrom(rlang,
+  ":=",
+  .data
+)
 importFrom(scales,pseudo_log_trans)
 importFrom(sf,st_transform)
 importFrom(tibble,tibble)
