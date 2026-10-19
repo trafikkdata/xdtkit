@@ -77,6 +77,12 @@ where the constraint system is \eqn{\boldsymbol{A}\boldsymbol{v} + \boldsymbol{\
 with \eqn{\boldsymbol{A} = [\boldsymbol{A}_1; \boldsymbol{A}_2]} stacking flow conservation
 and measurement constraints.
 
+The combined constraint rank is calculated using pivoted Cholesky on
+\eqn{A A^\top}.
+Cholesky uses LAPACK's default tolerance (usually the number of rows times
+\code{.Machine$double.neg.eps} times the largest diagonal entry).
+This numerical rank can differ from QR for nearly dependent constraints.
+
 The function handles several numerical stability issues:
 \itemize{
   \item Extreme variances are capped at 1e10

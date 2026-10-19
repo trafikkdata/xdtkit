@@ -201,6 +201,12 @@ balance_predictions <- function(data,
 #' with \eqn{\boldsymbol{A} = [\boldsymbol{A}_1; \boldsymbol{A}_2]} stacking flow conservation
 #' and measurement constraints.
 #'
+#' The combined constraint rank is calculated using pivoted Cholesky on
+#' \eqn{A A^\top}.
+#' Cholesky uses LAPACK's default tolerance (usually the number of rows times
+#' \code{.Machine$double.neg.eps} times the largest diagonal entry).
+#' This numerical rank can differ from QR for nearly dependent constraints.
+#'
 #' The function handles several numerical stability issues:
 #' \itemize{
 #'   \item Extreme variances are capped at 1e10
@@ -318,9 +324,21 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
 
 
   # Step 3: Check system properties
-  rank_A1 <- qr(A1)$rank
-  rank_A2 <- qr(A2)$rank
-  rank_A <- qr(A)$rank
+  # Optional interactive diagnostics; these ranks are not used in balancing.
+  # rank_A1 <- qr(A1)$rank
+  # rank_A2 <- qr(A2)$rank
+
+  rank_chol <- withCallingHandlers(
+    chol(tcrossprod(A), pivot = TRUE),
+    warning = function(w) {
+      # The Gram matrix is positive semidefinite; deficient rank is expected.
+      if (identical(conditionMessage(w),
+                    "the matrix is either rank-deficient or not positive definite")) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+  rank_A <- attr(rank_chol, "rank")
   rank_deficit <- nrow(A) - rank_A
 
   # Step 4: Build covariance matrix
@@ -392,4 +410,3 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
     matrices = list(A1 = A1, A2 = A2)
   ))
 }
-
