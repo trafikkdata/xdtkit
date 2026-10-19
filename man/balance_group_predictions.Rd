@@ -14,7 +14,8 @@ balance_group_predictions(
   colname_aadt = "heavyAadt",
   colname_measurement_sd = "sigma_error",
   lambda = 1e-10,
-  nodes_to_balance
+  nodes_to_balance,
+  compute_condition_number = FALSE
 )
 }
 \arguments{
@@ -42,6 +43,11 @@ measurement error standard deviations. Default is "sigma_error".}
 Default is 1e-10.}
 
 \item{nodes_to_balance}{Character string specifying which nodes to balance.}
+
+\item{compute_condition_number}{Logical, default FALSE. If TRUE, calculate the
+condition number also for rank-deficient groups, where it is diagnostic only.
+Full-rank groups always calculate it for solver selection. Other diagnostics
+are unaffected.}
 }
 \value{
 A list with three elements:
@@ -51,7 +57,8 @@ A list with three elements:
     \itemize{
       \item `method_used`: "standard", "regularized", or "pseudoinverse"
       \item `rank_deficit`: Number of dependent constraints
-      \item `condition_number`: Condition number of the covariance matrix
+      \item `condition_number`: Condition number of the covariance matrix;
+        NA when skipped for rank-deficient groups or when no balancing is needed
       \item `n_measurements`: Number of observed AADT values
       \item `n_links`: Number of traffic links
       \item `n_constraints`: Number of flow conservation constraints

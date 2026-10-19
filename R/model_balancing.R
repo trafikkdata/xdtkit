@@ -22,6 +22,10 @@
 #'   (TRUE) or total AADT (FALSE). Default is FALSE.
 #' @param year Integer specifying the current year for calculating measurement error
 #'   based on data age.
+#' @param compute_condition_number Logical, default FALSE. If TRUE, calculate the
+#'   condition number also for rank-deficient groups, where it is diagnostic only.
+#'   Full-rank groups always calculate it for solver selection. Other diagnostics
+#'   are unaffected.
 #'
 #' @return A list with two elements:
 #'   \item{balanced_res}{A data frame with balanced predictions containing columns
@@ -54,7 +58,13 @@ balance_predictions <- function(data,
                                 balancing_grouping_variable,
                                 nodes_to_balance = "complete_nodes",
                                 heavy_vehicle = FALSE,
-                                year){
+                                year,
+                                compute_condition_number = FALSE){
+
+  if (!is.logical(compute_condition_number) ||
+      length(compute_condition_number) != 1L || is.na(compute_condition_number)) {
+    stop("compute_condition_number must be TRUE or FALSE.")
+  }
 
   aadt_colname <- if(heavy_vehicle) "heavyAadt" else "aadt"
   suffix <- if(heavy_vehicle) "_heavy" else ""
@@ -114,7 +124,8 @@ balance_predictions <- function(data,
       colname_measurement_sd = "sigma_error",
       pred = group_data[[pred_colname]],
       sd = group_data[[sd_colname]],
-      nodes_to_balance = nodes_to_balance)
+      nodes_to_balance = nodes_to_balance,
+      compute_condition_number = compute_condition_number)
 
     group_data$balanced_pred <- balanced_group_results$results$balanced_pred
     group_data$balanced_sd <- balanced_group_results$results$balanced_sd
@@ -172,6 +183,7 @@ balance_predictions <- function(data,
 #' @param lambda Numeric regularization parameter for ill-conditioned systems.
 #'   Default is 1e-10.
 #' @param nodes_to_balance Character string specifying which nodes to balance.
+#' @inheritParams balance_predictions
 #'
 #' @return A list with three elements:
 #'   \item{results}{A data frame with columns `inla_pred`, `inla_sd`, `balanced_pred`,
@@ -180,7 +192,8 @@ balance_predictions <- function(data,
 #'     \itemize{
 #'       \item `method_used`: "standard", "regularized", or "pseudoinverse"
 #'       \item `rank_deficit`: Number of dependent constraints
-#'       \item `condition_number`: Condition number of the covariance matrix
+#'       \item `condition_number`: Condition number of the covariance matrix;
+#'         NA when skipped for rank-deficient groups or when no balancing is needed
 #'       \item `n_measurements`: Number of observed AADT values
 #'       \item `n_links`: Number of traffic links
 #'       \item `n_constraints`: Number of flow conservation constraints
@@ -226,7 +239,12 @@ balance_predictions <- function(data,
 balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd = NULL,
                                       constraint_matrix = NULL,
                                       colname_aadt = "heavyAadt", colname_measurement_sd = "sigma_error",
-                                      lambda = 1e-10, nodes_to_balance){
+                                      lambda = 1e-10, nodes_to_balance,
+                                      compute_condition_number = FALSE){
+  if (!is.logical(compute_condition_number) ||
+      length(compute_condition_number) != 1L || is.na(compute_condition_number)) {
+    stop("compute_condition_number must be TRUE or FALSE.")
+  }
   start_time <- Sys.time()
   elapsed_start <- proc.time()[["elapsed"]]
   one_node_flag <- FALSE   # Flagging if a group has only one node
@@ -365,7 +383,10 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
   cat("    Inverting Sigma_b...\n")
   # Step 5: Robust inversion
   step_start <- proc.time()[["elapsed"]]
-  condition_number <- kappa(Sigma_b)
+  condition_number <- NA_real_
+  if (rank_deficit == 0 || compute_condition_number) {
+    condition_number <- kappa(Sigma_b)
+  }
   timings["kappa"] <- proc.time()[["elapsed"]] - step_start
   step_start <- proc.time()[["elapsed"]]
   if (rank_deficit > 0) {
