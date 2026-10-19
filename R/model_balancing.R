@@ -320,7 +320,7 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
 
 
   cat("    Creating Sigma_vb...\n")
-  Sigma_vb <- Sigma_v %*% t(A)
+  Sigma_vb <- sweep(t(A), MARGIN = 1, STATS = diag(Sigma_v), FUN = "*")
 
 
   # Step 3: Check system properties
