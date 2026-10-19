@@ -207,6 +207,9 @@ balance_predictions <- function(data,
 #' \code{.Machine$double.neg.eps} times the largest diagonal entry).
 #' This numerical rank can differ from QR for nearly dependent constraints.
 #'
+#' Prior variances are stored as a vector. Only the diagonal of the posterior
+#' covariance is calculated, since the results return marginal standard deviations.
+#'
 #' The function handles several numerical stability issues:
 #' \itemize{
 #'   \item Extreme variances are capped at 1e10
@@ -292,7 +295,7 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
   }
 
 
-  Sigma_v <- diag(as.vector(marginal_sds^2), nrow = length(marginal_sds))
+  prior_var <- as.vector(marginal_sds^2)
 
 
   d <- if (n_p == 0) numeric(0) else d
@@ -301,13 +304,9 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
   capped_count <- 0
 
   # Step 1: Handle extreme variances
-  if (max(diag(Sigma_v)) > 1e10 || kappa(Sigma_v) > 1e12) {
-    #normal_vars <- min(diag(Sigma_v)[diag(Sigma_v) < 1e6], 1e10)
-    #max_reasonable <- max(normal_vars) * 10
-    max_reasonable <- 1e10
-    capped_count <- sum(diag(Sigma_v) > max_reasonable)
-    diag(Sigma_v)[diag(Sigma_v) > max_reasonable] <- max_reasonable
-  }
+  max_reasonable <- 1e10
+  capped_count <- sum(prior_var > max_reasonable)
+  prior_var[prior_var > max_reasonable] <- max_reasonable
 
   # Step 2: Convert to dense matrices
   A1 <- as.matrix(A1)
@@ -320,7 +319,7 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
 
 
   cat("    Creating Sigma_vb...\n")
-  Sigma_vb <- sweep(t(A), MARGIN = 1, STATS = diag(Sigma_v), FUN = "*")
+  Sigma_vb <- sweep(t(A), MARGIN = 1, STATS = prior_var, FUN = "*")
 
 
   # Step 3: Check system properties
@@ -377,14 +376,15 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
   # The check is not used anywhere, commented out to avoid unnecessary computation
   # check <- balancing_gain %*% t(Sigma_vb)
   
-  Sigma_v_given_b <- Sigma_v - balancing_gain %*% t(Sigma_vb)
+  # Each diagonal entry of the matrix product is a dot product of matching rows.
+  posterior_var <- prior_var - rowSums(balancing_gain * Sigma_vb)
 
   # Some elements may be less than 0, set them to small number
   below_zero_count <- sum(mu_v_given_b <= 0)
   mu_v_given_b[mu_v_given_b <= 0] <- 0
 
   # The same applies to the uncertainty
-  posterior_var <- pmax(diag(Sigma_v_given_b), 1e-6)  # Ensure positivity
+  posterior_var <- pmax(posterior_var, 1e-6)  # Ensure positivity
 
   end_time <- Sys.time()
 

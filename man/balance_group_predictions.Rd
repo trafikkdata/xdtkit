@@ -83,6 +83,9 @@ Cholesky uses LAPACK's default tolerance (usually the number of rows times
 \code{.Machine$double.neg.eps} times the largest diagonal entry).
 This numerical rank can differ from QR for nearly dependent constraints.
 
+Prior variances are stored as a vector. Only the diagonal of the posterior
+covariance is calculated, since the results return marginal standard deviations.
+
 The function handles several numerical stability issues:
 \itemize{
   \item Extreme variances are capped at 1e10

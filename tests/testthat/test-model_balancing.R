@@ -1,3 +1,57 @@
+test_that("vector variances match the dense covariance calculation", {
+  cases <- list(
+    list(sd = c(5, 10, 20), duplicate = FALSE, method = "standard"),
+    list(sd = c(5, 10, 20), duplicate = TRUE, method = "pseudoinverse"),
+    list(sd = c(2e5, 10, 20), duplicate = FALSE, method = "standard"),
+    list(sd = c(0, 10, 20), duplicate = FALSE, method = "standard"),
+    list(sd = c(1e-7, 10, 20), duplicate = FALSE, method = "regularized",
+         measurements_only = TRUE)
+  )
+
+  for (case in cases) {
+    measurements_only <- isTRUE(case$measurements_only)
+    data <- data.frame(
+      id = 1:3,
+      aadt = if (measurements_only) c(100, 120, 80) else c(NA, NA, 80),
+      sigma_error = if (measurements_only) c(0, 2, 2) else c(NA, NA, 2)
+    )
+    A1 <- matrix(c(1, -1, 0), nrow = 1)
+    if (case$duplicate) A1 <- rbind(A1, A1)
+    if (measurements_only) A1 <- matrix(numeric(0), nrow = 0, ncol = 3)
+    pred <- c(100, 120, 90)
+    capture.output(
+      result <- balance_group_predictions(
+        data = data, nodes = NULL, pred = pred, sd = case$sd,
+        constraint_matrix = A1, colname_aadt = "aadt",
+        nodes_to_balance = "complete nodes"
+      )
+    )
+
+    A <- rbind(A1, result$matrices$A2)
+    Sigma_v <- diag(pmin(case$sd^2, 1e10))
+    Sigma_vb <- Sigma_v %*% t(A)
+    Sigma_epsilon <- diag(c(rep(0, nrow(A1)), na.omit(data$sigma_error)^2),
+                          nrow = nrow(A))
+    Sigma_b <- A %*% Sigma_v %*% t(A) + Sigma_epsilon
+    Sigma_b <- (Sigma_b + t(Sigma_b)) / 2
+    Sigma_b_inv <- switch(
+      case$method,
+      pseudoinverse = MASS::ginv(Sigma_b),
+      regularized = solve(Sigma_b + 1e-10 * diag(nrow(Sigma_b))),
+      standard = solve(Sigma_b)
+    )
+    gain <- Sigma_vb %*% Sigma_b_inv
+    b <- c(rep(0, nrow(A1)), na.omit(data$aadt))
+    expected_pred <- pmax(as.vector(pred + gain %*% (b - A %*% pred)), 0)
+    expected_sd <- sqrt(pmax(diag(Sigma_v - gain %*% t(Sigma_vb)), 1e-6))
+
+    expect_identical(result$diagnostics$method_used, case$method)
+    expect_equal(result$diagnostics$capped_count, sum(case$sd^2 > 1e10))
+    expect_equal(result$results$balanced_pred, expected_pred, tolerance = 1e-8)
+    expect_equal(result$results$balanced_sd, expected_sd, tolerance = 1e-8)
+  }
+})
+
 test_that("independent and duplicate constraints give the same balanced results", {
   data <- data.frame(
     id = 1:3,
