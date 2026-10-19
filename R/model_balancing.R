@@ -350,7 +350,7 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
   Sigma_epsilon <- as.matrix(Matrix::bdiag(
     list(Sigma_A1, Sigma_epsilon_mark)
   ))
-  Sigma_b <- A %*% Sigma_v %*% t(A) + Sigma_epsilon
+  Sigma_b <- A %*% Sigma_vb + Sigma_epsilon
   Sigma_b <- (Sigma_b + t(Sigma_b))/2  # Ensure symmetry
 
   cat("    Inverting Sigma_b...\n")
