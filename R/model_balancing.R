@@ -354,11 +354,12 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
 
   cat("    Inverting Sigma_b...\n")
   # Step 5: Robust inversion
+  condition_number <- kappa(Sigma_b)
   if (rank_deficit > 0) {
     # Use pseudoinverse for rank-deficient systems
     Sigma_b_inv <- MASS::ginv(Sigma_b)
     method <- "pseudoinverse"
-  } else if (kappa(Sigma_b) > 1e12) {
+  } else if (condition_number > 1e12) {
     # Use regularization for ill-conditioned systems
     Sigma_b_reg <- Sigma_b + lambda * diag(nrow(Sigma_b))
     Sigma_b_inv <- solve(Sigma_b_reg)
@@ -402,7 +403,7 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
     diagnostics = list(
       method_used = method,
       rank_deficit = rank_deficit,
-      condition_number = kappa(Sigma_b),
+      condition_number = condition_number,
       n_measurements = nrow(A2),
       n_links = ncol(A),
       n_constraints = nrow(A1),

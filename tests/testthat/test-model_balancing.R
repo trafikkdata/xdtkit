@@ -46,6 +46,7 @@ test_that("vector variances match the dense covariance calculation", {
     expected_sd <- sqrt(pmax(diag(Sigma_v - gain %*% t(Sigma_vb)), 1e-6))
 
     expect_identical(result$diagnostics$method_used, case$method)
+    expect_equal(result$diagnostics$condition_number, kappa(Sigma_b))
     expect_equal(result$diagnostics$capped_count, sum(case$sd^2 > 1e10))
     expect_equal(result$results$balanced_pred, expected_pred, tolerance = 1e-8)
     expect_equal(result$results$balanced_sd, expected_sd, tolerance = 1e-8)
