@@ -371,12 +371,13 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
   }
 
   # Step 6: Calculate posterior mean and variance
-  mu_v_given_b <- mu_v + Sigma_vb %*% Sigma_b_inv %*% (b - A %*% mu_v)
+  balancing_gain <- Sigma_vb %*% Sigma_b_inv
+  mu_v_given_b <- mu_v + balancing_gain %*% (b - A %*% mu_v)
   
   # The check is not used anywhere, commented out to avoid unnecessary computation
-  # check <- Sigma_vb %*% Sigma_b_inv %*% t(Sigma_vb)
+  # check <- balancing_gain %*% t(Sigma_vb)
   
-  Sigma_v_given_b <- Sigma_v - Sigma_vb %*% Sigma_b_inv %*% t(Sigma_vb)
+  Sigma_v_given_b <- Sigma_v - balancing_gain %*% t(Sigma_vb)
 
   # Some elements may be less than 0, set them to small number
   below_zero_count <- sum(mu_v_given_b <= 0)
