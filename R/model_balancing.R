@@ -228,6 +228,7 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
                                       colname_aadt = "heavyAadt", colname_measurement_sd = "sigma_error",
                                       lambda = 1e-10, nodes_to_balance){
   start_time <- Sys.time()
+  elapsed_start <- proc.time()[["elapsed"]]
   one_node_flag <- FALSE   # Flagging if a group has only one node
 
   if(!is.null(model)){
@@ -261,6 +262,8 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
              balanced_sd = marginal_sds)
 
     end_time <- Sys.time()
+    cat(sprintf("    TIMING skipped (no constraints or measurements); links=%d; total=%.3f s\n",
+                n_e, proc.time()[["elapsed"]] - elapsed_start))
 
     return(list(
       results = result_data,
@@ -319,7 +322,10 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
 
 
   cat("    Creating Sigma_vb...\n")
+  timings <- c(setup = proc.time()[["elapsed"]] - elapsed_start)
+  step_start <- proc.time()[["elapsed"]]
   Sigma_vb <- sweep(t(A), MARGIN = 1, STATS = prior_var, FUN = "*")
+  timings["Sigma_vb"] <- proc.time()[["elapsed"]] - step_start
 
 
   # Step 3: Check system properties
@@ -327,6 +333,7 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
   # rank_A1 <- qr(A1)$rank
   # rank_A2 <- qr(A2)$rank
 
+  step_start <- proc.time()[["elapsed"]]
   rank_chol <- withCallingHandlers(
     chol(tcrossprod(A), pivot = TRUE),
     warning = function(w) {
@@ -339,8 +346,10 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
   )
   rank_A <- attr(rank_chol, "rank")
   rank_deficit <- nrow(A) - rank_A
+  timings["rank"] <- proc.time()[["elapsed"]] - step_start
 
   # Step 4: Build covariance matrix
+  step_start <- proc.time()[["elapsed"]]
   Sigma_A1 <- matrix(0, nrow = n_n, ncol = n_n)
 
   Sigma_epsilon_mark <- if (n_p == 0)
@@ -351,10 +360,14 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
   ))
   Sigma_b <- A %*% Sigma_vb + Sigma_epsilon
   Sigma_b <- (Sigma_b + t(Sigma_b))/2  # Ensure symmetry
+  timings["Sigma_b"] <- proc.time()[["elapsed"]] - step_start
 
   cat("    Inverting Sigma_b...\n")
   # Step 5: Robust inversion
+  step_start <- proc.time()[["elapsed"]]
   condition_number <- kappa(Sigma_b)
+  timings["kappa"] <- proc.time()[["elapsed"]] - step_start
+  step_start <- proc.time()[["elapsed"]]
   if (rank_deficit > 0) {
     # Use pseudoinverse for rank-deficient systems
     Sigma_b_inv <- MASS::ginv(Sigma_b)
@@ -369,9 +382,13 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
     Sigma_b_inv <- solve(Sigma_b)
     method <- "standard"
   }
+  timings["inverse"] <- proc.time()[["elapsed"]] - step_start
 
   # Step 6: Calculate posterior mean and variance
+  step_start <- proc.time()[["elapsed"]]
   balancing_gain <- Sigma_vb %*% Sigma_b_inv
+  timings["gain"] <- proc.time()[["elapsed"]] - step_start
+  step_start <- proc.time()[["elapsed"]]
   mu_v_given_b <- mu_v + balancing_gain %*% (b - A %*% mu_v)
   
   # The check is not used anywhere, commented out to avoid unnecessary computation
@@ -386,6 +403,7 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
 
   # The same applies to the uncertainty
   posterior_var <- pmax(posterior_var, 1e-6)  # Ensure positivity
+  timings["posterior"] <- proc.time()[["elapsed"]] - step_start
 
   end_time <- Sys.time()
 
@@ -397,6 +415,11 @@ balance_group_predictions <- function(data, nodes, model = NULL, pred = NULL, sd
            inla_sd = marginal_sds,
            balanced_pred = as.vector(mu_v_given_b),
            balanced_sd = sqrt(posterior_var))
+
+  cat(sprintf("    TIMING A=%dx%d; method=%s; %s; total=%.3f s\n",
+              nrow(A), ncol(A), method,
+              paste(sprintf("%s=%.3f", names(timings), timings), collapse = "; "),
+              proc.time()[["elapsed"]] - elapsed_start))
 
   return(list(
     results = result_data,
