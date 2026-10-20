@@ -23,7 +23,8 @@ test_that("vector variances match the dense covariance calculation", {
       result <- balance_group_predictions(
         data = data, nodes = NULL, pred = pred, sd = case$sd,
         constraint_matrix = A1, colname_aadt = "aadt",
-        nodes_to_balance = "complete nodes"
+        nodes_to_balance = "complete nodes",
+        compute_condition_number = TRUE
       )
     )
 
@@ -50,6 +51,64 @@ test_that("vector variances match the dense covariance calculation", {
     expect_equal(result$diagnostics$capped_count, sum(case$sd^2 > 1e10))
     expect_equal(result$results$balanced_pred, expected_pred, tolerance = 1e-8)
     expect_equal(result$results$balanced_sd, expected_sd, tolerance = 1e-8)
+
+    kappa_calls <- 0L
+    balance_group <- balance_group_predictions
+    environment(balance_group) <- list2env(list(
+      kappa = function(...) {
+        kappa_calls <<- kappa_calls + 1L
+        base::kappa(...)
+      }
+    ), parent = environment(balance_group_predictions))
+    capture.output(
+      without_diagnostic <- balance_group(
+        data = data, nodes = NULL, pred = pred, sd = case$sd,
+        constraint_matrix = A1, colname_aadt = "aadt",
+        nodes_to_balance = "complete nodes"
+      )
+    )
+    expect_identical(kappa_calls, if (case$duplicate) 0L else 1L)
+    expect_identical(without_diagnostic$results, result$results)
+    expect_identical(without_diagnostic$diagnostics$method_used, case$method)
+    if (case$duplicate) {
+      expect_identical(without_diagnostic$diagnostics$condition_number, NA_real_)
+    } else {
+      expect_equal(without_diagnostic$diagnostics$condition_number, kappa(Sigma_b))
+    }
+  }
+})
+
+test_that("balance_predictions forwards the optional condition diagnostic", {
+  local_mocked_bindings(
+    build_incidence_matrix = function(...) {
+      rbind(c(1, -1, 0), c(1, -1, 0))
+    }
+  )
+  data <- data.frame(
+    id = 1:3, aadt = c(NA, NA, 80), inla_pred = c(100, 120, 90),
+    inla_sd = c(10, 10, 10), traffic_volume_source = "Trafikkdata_continuous",
+    traffic_volume_year = 2025, coverage = 1
+  )
+  capture.output(
+    default <- balance_predictions(
+      data, nodes = NULL, balancing_grouping_variable = "no_clustering", year = 2025
+    ),
+    enabled <- balance_predictions(
+      data, nodes = NULL, balancing_grouping_variable = "no_clustering", year = 2025,
+      compute_condition_number = TRUE
+    )
+  )
+  expect_identical(default$balanced_res, enabled$balanced_res)
+  expect_identical(default$diagnostics[[1]]$diagnostics$condition_number, NA_real_)
+  expect_false(is.na(enabled$diagnostics[[1]]$diagnostics$condition_number))
+})
+
+test_that("condition diagnostic flag requires a single nonmissing logical", {
+  for (flag in list(NA, NULL, c(TRUE, FALSE), 1, "TRUE")) {
+    expect_error(balance_predictions(compute_condition_number = flag),
+                 "compute_condition_number must be TRUE or FALSE.", fixed = TRUE)
+    expect_error(balance_group_predictions(compute_condition_number = flag),
+                 "compute_condition_number must be TRUE or FALSE.", fixed = TRUE)
   }
 })
 
