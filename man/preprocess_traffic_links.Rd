@@ -4,7 +4,7 @@
 \alias{preprocess_traffic_links}
 \title{Preprocess data}
 \usage{
-preprocess_traffic_links(raw_directed_traffic_link_data, year = 2024)
+preprocess_traffic_links(raw_directed_traffic_link_data, year)
 }
 \arguments{
 \item{raw_directed_traffic_link_data}{Raw, unprocessed traffic count data}

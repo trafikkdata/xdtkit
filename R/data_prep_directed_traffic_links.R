@@ -10,8 +10,7 @@
 #' @returns A processed data frame of directed traffic links.
 #' @export
 #'
-preprocess_traffic_links <- function(raw_directed_traffic_link_data,
-                                    year = 2024){
+preprocess_traffic_links <- function(raw_directed_traffic_link_data, year){
 
   validate_input_data(directed_traffic_link_data = raw_directed_traffic_link_data)
 
@@ -445,7 +444,7 @@ add_logLength <- function(df){
 remove_redundant_columns <- function(df){
   # Columns to keep:
   df_selected <- dplyr::select(
-    df, id, parentTrafficLinkId, functionalRoadClass,
+    df, id, roadSystemReference = roadSystemReferences, parentTrafficLinkId, functionalRoadClass,
     functionClass, highestSpeedLimit, lowestSpeedLimit, isNorwegianScenicRoute,
     isFerryRoute, isRamp, yearAppliesTo, startTrafficNodeId, endTrafficNodeId,
     municipality, county, roadSystem, roadCategory, length, logLength, maxLanes,
