@@ -1,0 +1,410 @@
+---
+title: "Faster traffic balancing: Cholesky, larger clusters and numerical trade-offs"
+date: "2026-10-19"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+```
+
+# Purpose and status
+
+The objective is not primarily to save seconds on the current model run. It is
+to make larger balancing clusters practical, so that less-trusted tellepunkter
+do not have to act as cluster boundaries.
+
+The experimental solver uses exact-equation reduction followed by Cholesky
+factorization instead of explicitly calculating an inverse or pseudoinverse.
+It is substantially faster on the largest cluster tested so far, but can also
+produce materially different predictions. Numerical checks have passed for
+most groups; scientific validation of those differences is still needed.
+
+This document describes the implementation and evidence as of the date above.
+Code chunks are illustrative and are not executed when rendering.
+
+# Why clusters matter
+
+A joint balancing problem for an entire connected network would allow
+information to propagate across all its links. Under the current assumptions,
+clusters are a computational approximation rather than an inherent statistical
+requirement.
+
+Splitting a connected network limits that propagation. Boundary counts are not
+reconciled jointly with all the evidence on both sides. Larger clusters could
+reduce reliance on questionable boundary counts.
+
+Removing a tellepunkt as a **boundary** is different from removing its
+**measurement**. Its count could remain inside a merged cluster, with uncertainty
+representing how much it is trusted.
+
+Truly disconnected components can be solved separately without approximation
+under the current independent-prior and independent-measurement assumptions.
+
+# Mathematical model
+
+## Prior predictions
+
+Let \(v\) be the vector of traffic volumes on the \(n\) links in a cluster.
+Balancing treats the INLA output as a Gaussian approximation:
+
+\[
+v \sim N(\mu,D),
+\qquad
+D=\operatorname{diag}(s_1^2,\ldots,s_n^2).
+\]
+
+Here \(\mu\) is the balancing prior's centre, currently the rounded INLA marginal
+medians, and \(s_i\) are the unrounded INLA marginal SDs.
+
+Using medians as the Gaussian centre is an existing approximation. Another
+existing assumption is that balancing ignores correlations between INLA
+predictions: \(D\) is diagonal.
+
+The implementation caps prior variances at \(10^{10}\).
+
+## Flow conservation and measurements
+
+Let \(F\) be the incidence/turning-movement matrix. Conservation is treated as
+an exact condition:
+
+\[
+Fv=0.
+\]
+
+Let \(H\) select measured link volumes, and let \(d\) contain observed counts:
+
+\[
+d=Hv+\epsilon,
+\qquad
+\epsilon\sim N(0,E).
+\]
+
+The current measurement covariance \(E\) is diagonal. Larger measurement
+variance means less influence; zero variance makes a measurement exact.
+
+Stack the equations:
+
+\[
+A=\begin{bmatrix}F\\H\end{bmatrix},
+\qquad
+b=\begin{bmatrix}0\\d\end{bmatrix},
+\qquad
+\Omega=\begin{bmatrix}0&0\\0&E\end{bmatrix}.
+\]
+
+Define:
+
+\[
+C=DA^\top,
+\qquad
+S=ADA^\top+\Omega,
+\qquad
+r=b-A\mu.
+\]
+
+When \(S\) is invertible, Gaussian conditioning gives:
+
+\[
+\mu_{\mathrm{balanced}}=\mu+CS^{-1}r,
+\]
+
+\[
+\Sigma_{\mathrm{posterior}}=D-CS^{-1}C^\top.
+\]
+
+Only the diagonal of the posterior covariance is needed to return marginal SDs.
+
+# Existing solver
+
+The existing solver explicitly calculates an inverse or pseudoinverse.
+Its rank-deficient branch uses `MASS::ginv()`:
+
+```{r existing-solver}
+S_inv <- MASS::ginv(S)
+gain <- C %*% S_inv
+
+balanced_mean <- as.vector(mu + gain %*% r)
+balanced_variance <- prior_var - rowSums(gain * C)
+```
+
+Full-rank cases instead use `solve()`, with diagonal regularization when
+considered ill-conditioned.
+
+The pseudoinverse uses a singular value decomposition (SVD). Singular values
+below its numerical cutoff are treated as zero. This protects against unstable
+inversion, but can discard small, nonzero directions as well as genuine
+redundancies. Comparisons on our data showed appreciable flow residuals in
+some existing-solver results.
+
+# Faster solver
+
+## Reduce redundant exact equations
+
+Conservation equations can be dependent: one equation may follow from others.
+Zero-variance measurements can also introduce dependencies.
+
+The candidate solver:
+
+1. Collects flow equations and zero-variance measurements as exact equations.
+2. Selects numerically independent rows using pivoted Cholesky on their Gram
+   matrix.
+3. Verifies that removed equation coefficients can be reconstructed from the
+   retained equations.
+4. Verifies that their centred right-hand sides are consistent too.
+5. Retains every positive-noise measurement.
+
+A link with zero prior variance is fixed at its prior value. Independence is
+therefore checked on columns with positive prior variance, using the centred
+right-hand side \(r=b-A\mu\) to account for the fixed links.
+
+Removing genuinely redundant, consistent exact equations preserves the
+unregularized mathematical conditioning problem. Numerical rank selection and
+reconstruction tolerances are practical qualifications to that statement.
+
+Dependent noisy measurement rows must not simply be dropped: they still
+provide observation information.
+
+## Factor once and solve triangular systems
+
+After reduction, factor the retained covariance:
+
+\[
+S=R^\top R.
+\]
+
+Compute:
+
+\[
+Y=R^{-\top}C^\top,
+\qquad
+z=R^{-\top}r.
+\]
+
+Then:
+
+\[
+\mu_{\mathrm{balanced}}=\mu+Y^\top z,
+\]
+
+\[
+\operatorname{diag}(\Sigma_{\mathrm{posterior}})
+=\operatorname{diag}(D)-\operatorname{colSums}(Y^2).
+\]
+
+This uses one Cholesky factor and triangular solves. It constructs neither an
+explicit inverse nor the full posterior covariance.
+
+```{r cholesky-core}
+# A and b here contain the retained equations.
+# equation_var contains zero for flow/exact rows and variance for noisy rows.
+prior_var <- sd^2
+C <- sweep(t(A), 1, prior_var, "*")
+S <- A %*% C + diag(equation_var, nrow = nrow(A))
+S <- (S + t(S)) / 2
+r <- as.vector(b - A %*% mu)
+
+R <- chol(S)
+Y <- backsolve(R, t(C), transpose = TRUE)
+z <- backsolve(R, r, transpose = TRUE)
+
+balanced_mean <- as.vector(mu + crossprod(Y, z))
+balanced_variance <- prior_var - colSums(Y^2)
+```
+
+This is the computational core, not a standalone replacement for the production
+function. It omits reduction, variance caps, deterministic cases, conditioning
+checks, regularization, validation and fallback.
+
+## Conditioning and regularization
+
+The candidate uses this conditioning indicator:
+
+```{r conditioning}
+condition_indicator <- 1 / rcond(R, triangular = TRUE)^2
+```
+
+Above \(10^{12}\), it refactors \(S+\lambda I\), with the current default
+\(\lambda=10^{-10}\). It rejects a regularized factor that still fails its
+numerical-singularity check.
+
+The squared triangular 1-norm condition estimate is not identical to the
+existing `kappa(S)` calculation, nor is it an exact 2-norm condition number for
+\(S\). The solvers can therefore make different regularization decisions.
+
+Adding \(\lambda I\) changes the conditioning problem, including softening
+previously exact equations. Regularization after equation reduction is also
+representation-dependent. It is not guaranteed to reproduce regularization
+of the original unreduced system.
+
+# Why predictions can differ
+
+For the same well-conditioned, nonsingular system without regularization, the
+inverse and Cholesky formulas are mathematically equivalent. Small examples
+showed close numerical agreement.
+
+Material differences can arise because:
+
+- The pseudoinverse truncates small singular directions, whereas Cholesky
+  attempts to retain them.
+- Numerical rank selection determines which exact equations are removed.
+- Conditioning estimates and regularization decisions differ.
+
+Thus, this is not yet a demonstrated output-preserving optimization. Smaller
+flow residuals support satisfaction of the equations, but do not prove that
+the resulting traffic estimates are more accurate.
+
+# Safeguards and output processing
+
+Before accepting a candidate, the code checks:
+
+- Finite means and variances.
+- No materially negative posterior variance, using a scaled tolerance.
+- Scaled flow residuals at most \(10^{-8}\).
+- Scaled exact-measurement residuals at most \(10^{-8}\).
+- Unchanged means for zero-prior-variance links.
+- Consistency of removed exact equations.
+
+For example, flow residuals are scaled row by row as:
+
+\[
+\frac{|F\mu_{\mathrm{balanced}}|}
+{\max(1,\ |F|\,|\mu_{\mathrm{balanced}}|)}
+\leq 10^{-8}.
+\]
+
+The maximum and division here are elementwise.
+
+If a candidate fails or is skipped, Cholesky-selected mode warns and runs the
+existing solver for that group. Fallback preserves availability, not a
+guarantee that the reference result satisfies the candidate's checks.
+
+Important limitations:
+
+- Validation happens **before** negative predictions are clipped to zero.
+  Clipping can break conservation.
+- Posterior variances are subsequently floored at \(10^{-6}\).
+- Overlapping groups are aggregated afterwards; the checks do not certify
+  conservation in the final aggregated output.
+- These checks establish numerical properties, not scientific validity.
+
+## Separate correction: SD precision
+
+INLA SDs were previously rounded before balancing. This turned some small
+positive uncertainties into zero, unintentionally fixing link values.
+Some fixed values then contradicted exact zero-count measurements.
+
+The code now preserves unrounded fitted SDs while retaining rounded prediction
+medians. This correction affects both solvers, independently of Cholesky.
+The zero-count measurement-uncertainty policy itself has not been changed.
+
+# Observed results
+
+For the largest tested heavy-traffic cluster, one side-by-side run reported:
+
+| Quantity | Observation |
+|:--|--:|
+| Links | 10,538 |
+| Combined equations before reduction | 5,553 |
+| Existing solver portion | approximately 20.5 s |
+| Candidate portion, including reduction and checks | approximately 2.1 s |
+| Maximum per-link prediction difference | approximately 449 |
+| Maximum raw flow residual, existing | approximately 374 |
+| Maximum raw flow residual, candidate | approximately \(3\times10^{-7}\) |
+
+The candidate used regularization for this cluster. These are individual-run
+observations, not repeated benchmark estimates.
+
+A subsequent actual driver run selected Cholesky for both traffic models:
+
+| Outcome | Total traffic | Heavy traffic |
+|:--|--:|--:|
+| Successful candidate solves | 344 | 328 |
+| Reference fallbacks | 0 | 1 |
+| Groups needing no balancing | 23 | 23 |
+
+Heavy group 44 failed the pre-clipping scaled flow-residual check and fell back.
+The complete pipeline took approximately 140 seconds.
+
+The preceding approximately 157-second run executed both solvers for comparison.
+It is therefore **not** a clean original-only baseline for whole-pipeline speedup.
+Common setup, INLA fitting and data loading also limit end-to-end gains.
+
+# Scaling beyond current clusters
+
+Let \(m\) be the number of retained equations and \(n\) the number of links.
+The current approach remains dense:
+
+- Main matrix storage is roughly \(O(m^2+nm)\).
+- Dense factorization and the core multi-right-hand-side solves cost roughly
+  \(O(m^3+nm^2)\).
+- Rank detection and exact-equation reduction add further dense work.
+
+Consequently, a faster dense solver does not make arbitrarily large clusters
+cheap. Setup and memory can become the next bottlenecks.
+
+However, the underlying problem is naturally sparse: each conservation
+equation touches relatively few links, each measurement selects a link, and
+the assumed prior covariance is diagonal.
+
+A sparse formulation could make much larger clusters, or possibly a joint
+connected-network solve, practical. This has not been implemented or benchmarked.
+Sparse factorization introduces fill-in; network structure, ordering, marginal
+variance calculations and available memory would determine feasibility.
+
+There are therefore two distinct paths:
+
+1. **Dense Cholesky:** test larger clusters sooner.
+2. **Sparse joint balancing:** investigate whether computationally imposed
+   boundaries can eventually be avoided.
+
+# Questions and next experiment for the analysts
+
+1. Should conservation and zero-count measurements really be exact?
+2. Does retaining small singular directions recover useful information, or
+   amplify unreliable information?
+3. Is ignoring prior correlations acceptable as clusters grow?
+4. What uncertainty should low-trust counts have inside merged clusters?
+5. Is the current regularization policy defensible across scales?
+6. Do final predictions conserve flow after clipping and overlap aggregation?
+7. Do larger clusters improve predictions against trusted, withheld counts?
+
+A useful next experiment would merge selected clusters across less-trusted
+boundaries and compare:
+
+- Runtime and peak memory.
+- Numerical stability and fallback frequency.
+- Conservation before and after final output processing.
+- Prediction changes around former boundaries.
+- Accuracy against trusted counts withheld from balancing.
+
+This tests the intended modelling benefit, rather than only speed on the
+existing partition.
+
+# Implementation references
+
+- [Balancing implementation](R/model_balancing.R): equation construction,
+  reference solver, candidate reduction, Cholesky calculation and safeguards.
+- [Balancing tests](tests/testthat/test-model_balancing.R): numerical examples,
+  selection, reduction, validation and fallback.
+- [INLA extraction](R/model_inla.R): rounded medians and unrounded SDs.
+- [INLA regression tests](tests/testthat/test-model_inla.R): SD precision and
+  its connection to balancing.
+
+The package default remains `solver = "existing"`. The current local modelling
+driver explicitly selects `solver = "cholesky"` for both traffic models, and its
+usual saved outputs have been overwritten by the authorized trial run.
+
+```{r solver-selection}
+# Pass alongside the normal data/model arguments.
+balance_predictions(..., solver = "cholesky")
+
+# Compare both methods but return existing-solver predictions.
+balance_predictions(..., solver = "existing", compare_cholesky = TRUE)
+```
+
+Focused regression tests and the actual driver run passed. A full package check
+was not run. Passing tests does not establish scientific equivalence.
