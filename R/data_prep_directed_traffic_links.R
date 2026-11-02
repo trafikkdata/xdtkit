@@ -200,15 +200,14 @@ add_heavy_aadt <- function(df){
 #' @return A data frame with processed list columns
 #' @export
 process_list_columns <- function(df){
-  # All list extraction logic
-  names(df)[sapply(df, is.list)]
-
   df <- dplyr::mutate(df,
                       dplyr::across(c(functionalRoadClass, functionClass),
                                     extract_smallest_element),
                       dplyr::across(c(municipalityIds, countyIds,
                                       roadCategory, roadSystemReferences),
-                                    safely_extract_first_element))
+                                    safely_extract_first_element),
+                      dplyr::across(dplyr::any_of("bestDataSourceAadt_sourceTrpIds"),
+                                    collapse_list_elements))
 
   df <- remove_list_columns(df)
 
@@ -245,9 +244,29 @@ safely_extract_first_element <- Vectorize(function(x){
   warning("Entry was not vector, character, numeric or null.")
 })
 
+#' Collapse list elements
+#'
+#' Collapses each element of a list column into a single delimited string.
+#' Empty, NULL or all-NA elements become NA.
+#'
+#' @param x A list (or atomic vector) of ids
+#' @param sep Separator placed between ids. Default is ";".
+#'
+#' @return A character vector of the same length as x
+#' @export
+collapse_list_elements <- function(x, sep = ";"){
+  purrr::map_chr(x, \(el) {
+    el <- el[!is.na(el)]
+    if (length(el) == 0) {
+      return(NA_character_)
+    }
+    paste(el, collapse = sep)
+  })
+}
+
 #' Remove list columns
 #'
-#' Removes all columns of type list from the data frame.
+#' Removes all columns of type list from the data frame, because list columns mess up the INLA step.
 #'
 #' @param df A data frame potentially containing list columns
 #'
@@ -442,6 +461,24 @@ add_logLength <- function(df){
 #' @return A data frame with redundant columns removed
 #' @export
 remove_redundant_columns <- function(df){
+  # Original columns:
+  # id parentTrafficLinkId isTrafficWithMetering functionalRoadClass
+  # functionClass highestSpeedLimit lowestSpeedLimit isNorwegianScenicRoute
+  # isFerryRoute isRamp isBlocked isInvalid yearAppliesTo startTrafficNodeId
+  # endTrafficNodeId municipalityIds countyIds roadSystemReferences roadCategory
+  # length maxLanes minLanes hasOnlyPublicTransportLanes
+  # lastYearAadt_trafficLinkId lastYearAadt_trafficVolumeValue lastYearAadt_year
+  # lastYearAadt_trafficVolumeResolution lastYearAadt_heavyRatio
+  # lastYearAadt_trafficWorkValue lastYearAadt_trafficVolumeType
+  # lastYearAadt_relativeUncertainty lastYearAadt_heavyRelativeUncertainty
+  # bestDataSourceAadt_trafficLinkId bestDataSourceAadt_trafficVolumeValue
+  # bestDataSourceAadt_year bestDataSourceAadt_trafficVolumeResolution
+  # bestDataSourceAadt_registrationFrequency bestDataSourceAadt_coverage
+  # bestDataSourceAadt_correctedStandardError bestDataSourceAadt_heavyRatio
+  # bestDataSourceAadt_trafficWorkValue bestDataSourceAadt_sourceType
+  # bestDataSourceAadt_trafficVolumeType bestDataSourceAadt_comment heavyAadt
+  # lastYearAadt_heavyAadt traffic_volume_source traffic_volume_year county
+  # municipality roadSystem logLength
   # Columns to keep:
   df_selected <- dplyr::select(
     df, id, roadSystemReference = roadSystemReferences, parentTrafficLinkId, functionalRoadClass,
@@ -454,6 +491,7 @@ remove_redundant_columns <- function(df){
     lastYearAadt_heavyAadt,
     aadt = bestDataSourceAadt_trafficVolumeValue,
     coverage = bestDataSourceAadt_coverage,
+    sourceTrpIds = bestDataSourceAadt_sourceTrpIds,
     heavyRatio = bestDataSourceAadt_heavyRatio,
     heavyAadt,
     traffic_volume_source, traffic_volume_year)
