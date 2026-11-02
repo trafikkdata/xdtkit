@@ -13,5 +13,5 @@ remove_list_columns(df)
 A data frame with list columns removed
 }
 \description{
-Removes all columns of type list from the data frame.
+Removes all columns of type list from the data frame, because list columns mess up the INLA step.
 }
