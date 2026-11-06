@@ -7,27 +7,34 @@
 build_adjacency_matrix(link_data, exclude_public_transport = FALSE)
 }
 \arguments{
-\item{link_data}{Data frame with columns `startTrafficNodeId` and
-`endTrafficNodeId` identifying the endpoints of each directed traffic link.
-If `exclude_public_transport = TRUE`, must also contain column
-`hasOnlyPublicTransportLanes`.}
+\item{link_data}{Data frame with columns `startTrafficNodeId`,
+`endTrafficNodeId` and `hasOnlyPublicTransportLanes`. The first two
+identify the endpoints of each directed traffic link. Missing values in
+`hasOnlyPublicTransportLanes` are treated as `FALSE`.}
 
-\item{exclude_public_transport}{Logical; if `TRUE`, sets all adjacencies
-involving public transport-only links to zero. Default `FALSE`. Public
-transport links often have very different traffic volumes than neighboring
-links, which can affect spatial smoothing in statistical models.}
+\item{exclude_public_transport}{Logical. Controls how public transport-only
+links are handled:
+* `FALSE` (default): public transport links stay in the graph and are
+  connected to each other when they share a node, but all connections
+  between public transport links and regular links are removed.
+* `TRUE`: public transport links are left out entirely, so their rows and
+  columns are zero.}
 }
 \value{
 A sparse symmetric adjacency matrix (dgCMatrix) with dimensions
   n x n where n is the number of traffic links. Entry (i,j) is 1 if links
-  i and j share a traffic node, 0 otherwise. The diagonal is always 0
-  (links are not adjacent to themselves).
+  i and j share a traffic node (and are allowed to be connected, see above),
+  0 otherwise. The diagonal is always 0 (links are not adjacent to
+  themselves).
 }
 \description{
 Constructs a sparse adjacency matrix representing which traffic links are
 geometrically connected (share a traffic node). Two links are considered
 adjacent if they share at least one traffic node (either start or end node).
-The matrix is symmetric and can optionally exclude public transport links.
+The matrix is symmetric. Public transport-only links are never connected to
+regular links, since their traffic volumes are typically very different from
+those of neighboring links, which can affect spatial smoothing in
+statistical models.
 }
 \details{
 The function builds adjacency based on geometric connectivity only - it does
@@ -37,9 +44,4 @@ conservation constraints, use turning movement data instead.
 Adjacency is computed via a sparse link-by-node incidence matrix `B`, so that
 `B %*% t(B)` counts the nodes shared by each pair of links. This avoids
 looping over nodes.
-
-When `exclude_public_transport = TRUE`, rows and columns corresponding to
-public transport links are zeroed out, effectively isolating them from the
-adjacency structure. This is useful for spatial models where you want to
-prevent public transport links from influencing predictions on regular roads.
 }

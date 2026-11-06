@@ -7,21 +7,28 @@
 #' Constructs a sparse adjacency matrix representing which traffic links are
 #' geometrically connected (share a traffic node). Two links are considered
 #' adjacent if they share at least one traffic node (either start or end node).
-#' The matrix is symmetric and can optionally exclude public transport links.
+#' The matrix is symmetric. Public transport-only links are never connected to
+#' regular links, since their traffic volumes are typically very different from
+#' those of neighboring links, which can affect spatial smoothing in
+#' statistical models.
 #'
-#' @param link_data Data frame with columns `startTrafficNodeId` and
-#'   `endTrafficNodeId` identifying the endpoints of each directed traffic link.
-#'   If `exclude_public_transport = TRUE`, must also contain column
-#'   `hasOnlyPublicTransportLanes`.
-#' @param exclude_public_transport Logical; if `TRUE`, sets all adjacencies
-#'   involving public transport-only links to zero. Default `FALSE`. Public
-#'   transport links often have very different traffic volumes than neighboring
-#'   links, which can affect spatial smoothing in statistical models.
+#' @param link_data Data frame with columns `startTrafficNodeId`,
+#'   `endTrafficNodeId` and `hasOnlyPublicTransportLanes`. The first two
+#'   identify the endpoints of each directed traffic link. Missing values in
+#'   `hasOnlyPublicTransportLanes` are treated as `FALSE`.
+#' @param exclude_public_transport Logical. Controls how public transport-only
+#'   links are handled:
+#'   * `FALSE` (default): public transport links stay in the graph and are
+#'     connected to each other when they share a node, but all connections
+#'     between public transport links and regular links are removed.
+#'   * `TRUE`: public transport links are left out entirely, so their rows and
+#'     columns are zero.
 #'
 #' @returns A sparse symmetric adjacency matrix (dgCMatrix) with dimensions
 #'   n x n where n is the number of traffic links. Entry (i,j) is 1 if links
-#'   i and j share a traffic node, 0 otherwise. The diagonal is always 0
-#'   (links are not adjacent to themselves).
+#'   i and j share a traffic node (and are allowed to be connected, see above),
+#'   0 otherwise. The diagonal is always 0 (links are not adjacent to
+#'   themselves).
 #'
 #' @details
 #' The function builds adjacency based on geometric connectivity only - it does
@@ -31,11 +38,6 @@
 #' Adjacency is computed via a sparse link-by-node incidence matrix `B`, so that
 #' `B %*% t(B)` counts the nodes shared by each pair of links. This avoids
 #' looping over nodes.
-#'
-#' When `exclude_public_transport = TRUE`, rows and columns corresponding to
-#' public transport links are zeroed out, effectively isolating them from the
-#' adjacency structure. This is useful for spatial models where you want to
-#' prevent public transport links from influencing predictions on regular roads.
 #'
 #' @export
 build_adjacency_matrix <- function(link_data, exclude_public_transport = FALSE) {
@@ -65,7 +67,25 @@ build_adjacency_matrix <- function(link_data, exclude_public_transport = FALSE) 
   shared <- Matrix::summary(Matrix::tcrossprod(B))
   shared <- shared[shared$i != shared$j, ]  # drop diagonal
 
-  # Rebuild as a general 0/1 matrix with both triangles filled
+  # Public transport handling (done on the pair list, before building the matrix)
+  is_pt <- link_data$hasOnlyPublicTransportLanes %in% TRUE
+  n_pt <- sum(is_pt)
+
+  if (n_pt > 0) {
+    if (exclude_public_transport) {
+      message("Excluding ", n_pt, " public transport links...")
+      # Option 1: public transport links are left out entirely
+      keep <- !is_pt[shared$i] & !is_pt[shared$j]
+    } else {
+      message("Separating ", n_pt, " public transport links from regular links...")
+      # Option 2: only keep pairs where both links are public transport,
+      # or both are regular
+      keep <- is_pt[shared$i] == is_pt[shared$j]
+    }
+    shared <- shared[keep, ]
+  }
+
+  # Build the 0/1 matrix with both triangles filled
   adj_sparse <- Matrix::sparseMatrix(
     i = shared$i,
     j = shared$j,
@@ -73,22 +93,10 @@ build_adjacency_matrix <- function(link_data, exclude_public_transport = FALSE) 
     dims = c(n_links, n_links),
     repr = "C"
   )
-  # Symmetric input gives both (i,j) and (j,i) in summary(), but if tcrossprod
-  # returned a symmetric class only one triangle is listed, so add the transpose
+  # summary() may list only one triangle for a symmetric result, so add the
+  # transpose and reset values to 1
   adj_sparse <- adj_sparse + Matrix::t(adj_sparse)
   adj_sparse@x[] <- 1
-
-  # Exclude public transport links if requested
-  if (exclude_public_transport) {
-    public_transport_idx <- which(link_data$hasOnlyPublicTransportLanes)
-    if (length(public_transport_idx) > 0) {
-      message("Excluding ", length(public_transport_idx), " public transport links...")
-      keep <- Matrix::Diagonal(
-        x = as.numeric(!seq_len(n_links) %in% public_transport_idx)
-      )
-      adj_sparse <- Matrix::drop0(keep %*% adj_sparse %*% keep)
-    }
-  }
 
   message("Adjacency matrix complete: ", Matrix::nnzero(adj_sparse), " non-zero entries")
 
