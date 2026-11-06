@@ -160,8 +160,7 @@ get_best_traffic_volume <- function(df){
 #' @export
 flatten_df <- function(df){
   df_flattened <- df |>
-    tidyr::unnest_wider(bestDataSourceAadt, names_sep = "_") |>
-    tidyr::unnest_wider(lastYearAadt, names_sep = "_")
+    tidyr::unpack(c(bestDataSourceAadt, lastYearAadt), names_sep = "_")
 
   return(df_flattened)
 }
@@ -222,13 +221,10 @@ process_list_columns <- function(df){
 #'
 #' @return The minimum value if x is a vector, otherwise x itself
 #' @export
-extract_smallest_element <- Vectorize(function(x){
-  if(is.vector(x)){
-    return(min(x))
-  }else{
-    return(x)
-  }
-})
+extract_smallest_element <- function(x) {
+  if (!is.list(x)) return(x)
+  purrr::map_vec(x, min)
+}
 
 #' Safely extract first element
 #'
@@ -238,11 +234,10 @@ extract_smallest_element <- Vectorize(function(x){
 #'
 #' @return The first element of x, or x itself if not a vector/data frame
 #' @export
-safely_extract_first_element <- Vectorize(function(x){
-  if(is.vector(x)|is.data.frame(x)){return(x[1])}
-  if(is.character(x)|is.numeric(x)|is.null(x)){return(x)}
-  warning("Entry was not vector, character, numeric or null.")
-})
+safely_extract_first_element <- function(x) {
+  if (!is.list(x)) return(x)
+  purrr::map_vec(x, \(el) if (length(el) == 0) NA else el[[1]])
+}
 
 #' Collapse list elements
 #'
@@ -426,9 +421,11 @@ add_municipality <- function(df){
 #'
 #' @return A data frame with a roadSystem factor column added
 #' @export
-add_roadSystem <- function(df){
+add_roadSystem <- function(df) {
+  u <- unique(df$roadSystemReferences)
+  lookup <- sub(" .*", "", u)
   df |>
-    dplyr::mutate(roadSystem = as.factor(gsub(" .*$", "", roadSystemReferences)))
+    dplyr::mutate(roadSystem = as.factor(lookup[match(roadSystemReferences, u)]))
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
