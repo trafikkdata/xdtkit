@@ -34,6 +34,10 @@ The function builds adjacency based on geometric connectivity only - it does
 not consider whether traffic can legally flow between links. For flow
 conservation constraints, use turning movement data instead.
 
+Adjacency is computed via a sparse link-by-node incidence matrix `B`, so that
+`B %*% t(B)` counts the nodes shared by each pair of links. This avoids
+looping over nodes.
+
 When `exclude_public_transport = TRUE`, rows and columns corresponding to
 public transport links are zeroed out, effectively isolating them from the
 adjacency structure. This is useful for spatial models where you want to

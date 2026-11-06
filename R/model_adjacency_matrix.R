@@ -28,6 +28,10 @@
 #' not consider whether traffic can legally flow between links. For flow
 #' conservation constraints, use turning movement data instead.
 #'
+#' Adjacency is computed via a sparse link-by-node incidence matrix `B`, so that
+#' `B %*% t(B)` counts the nodes shared by each pair of links. This avoids
+#' looping over nodes.
+#'
 #' When `exclude_public_transport = TRUE`, rows and columns corresponding to
 #' public transport links are zeroed out, effectively isolating them from the
 #' adjacency structure. This is useful for spatial models where you want to
@@ -39,59 +43,50 @@ build_adjacency_matrix <- function(link_data, exclude_public_transport = FALSE) 
 
   message("Building adjacency matrix for ", n_links, " links...")
 
-  # Create node-to-links mapping for efficient lookup
-  # For each node, find all links that start or end at that node
-  start_nodes <- link_data$startTrafficNodeId
-  end_nodes <- link_data$endTrafficNodeId
+  # Link-by-node incidence matrix
+  # One entry per (link, node) pair; unique() so that links with identical
+  # start and end nodes are only counted once
+  link_idx <- rep(seq_len(n_links), times = 2)
+  node_id <- c(link_data$startTrafficNodeId, link_data$endTrafficNodeId)
 
-  # Create lists of link indices for each node
-  all_nodes <- unique(c(start_nodes, end_nodes))
+  incidence <- unique(data.frame(link = link_idx, node = node_id))
+  incidence <- incidence[!is.na(incidence$node), ]
+  node_idx <- match(incidence$node, unique(incidence$node))
 
-  # Initialize vectors to store i, j pairs for adjacency
-  i_vec <- integer()
-  j_vec <- integer()
-
-  message("Finding adjacent links...")
-
-  # For each unique node, find all links connected to it
-  for (node in all_nodes) {
-    # Find all links that touch this node
-    links_at_node <- which(start_nodes == node | end_nodes == node)
-
-    # If more than one link at this node, they're all adjacent to each other
-    if (length(links_at_node) > 1) {
-      # Create all pairs of links at this node
-      pairs <- utils::combn(links_at_node, 2)
-      i_vec <- c(i_vec, pairs[1, ], pairs[2, ])
-      j_vec <- c(j_vec, pairs[2, ], pairs[1, ])
-    }
-  }
-
-  message("Building sparse matrix from ", length(i_vec), " adjacency pairs...")
-
-  # Build sparse matrix
-  adj_sparse <- Matrix::sparseMatrix(
-    i = i_vec,
-    j = j_vec,
+  B <- Matrix::sparseMatrix(
+    i = incidence$link,
+    j = node_idx,
     x = 1,
-    dims = c(n_links, n_links),
-    symmetric = FALSE  # We'll make it symmetric below
+    dims = c(n_links, max(node_idx))
   )
 
-  # Make it symmetric (shouldn't be necessary given our construction, but just in case)
-  adj_sparse <- adj_sparse | Matrix::t(adj_sparse)
+  # Adjacency: B %*% t(B) has entry (i, j) = number of nodes shared by i and j
+  message("Finding adjacent links...")
+  shared <- Matrix::summary(Matrix::tcrossprod(B))
+  shared <- shared[shared$i != shared$j, ]  # drop diagonal
 
-  # Convert to numeric for consistency
-  adj_sparse <- methods::as(adj_sparse, "dMatrix")
+  # Rebuild as a general 0/1 matrix with both triangles filled
+  adj_sparse <- Matrix::sparseMatrix(
+    i = shared$i,
+    j = shared$j,
+    x = 1,
+    dims = c(n_links, n_links),
+    repr = "C"
+  )
+  # Symmetric input gives both (i,j) and (j,i) in summary(), but if tcrossprod
+  # returned a symmetric class only one triangle is listed, so add the transpose
+  adj_sparse <- adj_sparse + Matrix::t(adj_sparse)
+  adj_sparse@x[] <- 1
 
   # Exclude public transport links if requested
   if (exclude_public_transport) {
     public_transport_idx <- which(link_data$hasOnlyPublicTransportLanes)
     if (length(public_transport_idx) > 0) {
       message("Excluding ", length(public_transport_idx), " public transport links...")
-      adj_sparse[public_transport_idx, ] <- 0
-      adj_sparse[, public_transport_idx] <- 0
-      adj_sparse <- Matrix::drop0(adj_sparse)
+      keep <- Matrix::Diagonal(
+        x = as.numeric(!seq_len(n_links) %in% public_transport_idx)
+      )
+      adj_sparse <- Matrix::drop0(keep %*% adj_sparse %*% keep)
     }
   }
 
