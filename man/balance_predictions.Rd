@@ -10,7 +10,8 @@ balance_predictions(
   balancing_grouping_variable,
   nodes_to_balance = "complete_nodes",
   heavy_vehicle = FALSE,
-  year
+  year,
+  compute_condition_number = FALSE
 )
 }
 \arguments{
@@ -33,6 +34,11 @@ balancing. Default is "complete_nodes".}
 
 \item{year}{Integer specifying the current year for calculating measurement error
 based on data age.}
+
+\item{compute_condition_number}{Logical, default FALSE. If TRUE, calculate the
+condition number also for rank-deficient groups, where it is diagnostic only.
+Full-rank groups always calculate it for solver selection. Other diagnostics
+are unaffected.}
 }
 \value{
 A list with two elements:
