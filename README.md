@@ -19,6 +19,23 @@ You can install the development version of xdtkit from GitHub with:
 pak::pak("trafikkdata/xdtkit")
 ```
 
+## Automated tests
+
+GitHub Actions runs the `testthat` suite on pushes and pull requests, and can
+also be started manually from the Actions tab. It uses Ubuntu and the current
+R release, installs package and system dependencies, and caches R packages.
+INLA is installed from its stable repository.
+
+To run the same suite locally with package dependencies installed:
+
+``` r
+testthat::test_local(stop_on_failure = TRUE)
+```
+
+This runs the package tests, not the full modelling example or `R CMD check`.
+Air formatting and lintr checks are not enabled yet. They can be added later
+as separate CI jobs after agreeing on formatting and lint rules.
+
 ## Example
 
 The AADT modelling process requires some fairly large datasets that are
