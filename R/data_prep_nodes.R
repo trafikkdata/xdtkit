@@ -28,28 +28,38 @@
 #'   }
 #' @export
 identify_unbalanceable_nodes <- function(nodes, directed_traffic_links){
-  data <- directed_traffic_links
-  nodes_raw <- nodes
 
-  # Unnest to get one row per node-traffic link combination
-  node_traffic_links <- nodes_raw |> sf::st_drop_geometry() |>
-    dplyr::select(id, connectedTrafficLinkIds, roadSystems) |>
-    tidyr::unnest(connectedTrafficLinkIds)
+  link_ids <- nodes$connectedTrafficLinkIds
+  n_nodes <- length(link_ids)
 
-  # Join with data to get road systems from traffic links
-  node_covered_systems <- node_traffic_links |>
-    dplyr::left_join(data |> dplyr::select(parentTrafficLinkId, roadSystem) |>
-                       dplyr::distinct(),
-                     by = c("connectedTrafficLinkIds" = "parentTrafficLinkId")) |>
-    dplyr::group_by(id) |>
-    dplyr::summarise(
-      roadSystems = list(dplyr::first(roadSystems)),
-      n_roadSystems = length(dplyr::first(roadSystems)),
-      trafficLinkRoadSystems = list(unique(roadSystem)),
-      n_trafficLinkRoadSystems = length(unique(roadSystem))
-    )
+  # Unique road systems per traffic link (looked up once)
+  link_systems <- directed_traffic_links |>
+    sf::st_drop_geometry() |>
+    dplyr::distinct(link = parentTrafficLinkId, roadSystem)
 
-  nodes <- nodes_raw |> dplyr::left_join(node_covered_systems)
+  # One row per node-traffic link combination
+  node_links <- data.frame(
+    node = rep.int(seq_len(n_nodes), lengths(link_ids)),
+    link = unlist(link_ids, use.names = FALSE)
+  )
+
+  # Unique road systems per node (NA for links missing from the data)
+  node_systems <- node_links |>
+    dplyr::left_join(link_systems, by = "link",
+                     relationship = "many-to-many") |>
+    dplyr::distinct(node, roadSystem)
+
+  traffic_link_road_systems <- split(
+    node_systems$roadSystem,
+    factor(node_systems$node, levels = seq_len(n_nodes))
+  )
+  names(traffic_link_road_systems) <- NULL
+  n_traffic_link_road_systems <- lengths(traffic_link_road_systems)
+
+  # Attach results (no join needed, row order is preserved)
+  nodes$n_roadSystems <- lengths(nodes$roadSystems)
+  nodes$trafficLinkRoadSystems <- traffic_link_road_systems
+  nodes$n_trafficLinkRoadSystems <- n_traffic_link_road_systems
 
   nodes <- nodes |>
     dplyr::mutate(
@@ -61,7 +71,8 @@ identify_unbalanceable_nodes <- function(nodes, directed_traffic_links){
         numberOfUndirectedLinks == 2 &
         n_roadSystems > n_trafficLinkRoadSystems,
       # Incomplete nodes
-      unbalanceable_node = number_of_candidate_links > number_of_traffic_links)
+      unbalanceable_node = number_of_candidate_links > number_of_traffic_links
+    )
 
   return(nodes)
 }
