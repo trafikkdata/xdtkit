@@ -99,8 +99,8 @@ strategic_network_clustering <- function(data,
     # Don't connect link to itself
     dplyr::filter(link_id.x != link_id.y) |>
     # Keep one direction only for undirected graph
-    dplyr::mutate(link_pair = purrr::pmap_chr(list(link_id.x, link_id.y), ~paste(sort(c(...)), collapse = "-"))) |>
-    dplyr::distinct(link_pair, .keep_all = TRUE) |>
+    dplyr::filter(link_id.x < link_id.y) |>
+    dplyr::distinct(link_id.x, link_id.y) |>
     dplyr::select(from = link_id.x, to = link_id.y)
 
   # Build undirected graph with links as vertices
@@ -151,12 +151,17 @@ strategic_network_clustering <- function(data,
 
   # Step 3.5: Merge small clusters with neighbors
   message("Merging small clusters...\n")
+
+  # Neighbour lookup (integer vertex ids), built once and shared by the steps below
+  adjacency <- link_adjacency(mainland_graph)
+
   base_assignments <- merge_small_clusters(
     base_assignments,
     mainland_graph,  # Use original graph to find neighbors
     selected_barriers,
     min_size = 100,
-    max_size = 1000
+    max_size = 1000,
+    adjacency = adjacency
   )
 
   # Step 4: Assign barrier links to neighboring clusters (MAINLAND ONLY)
@@ -165,7 +170,8 @@ strategic_network_clustering <- function(data,
   barrier_assignments <- assign_barriers_to_clusters(
     mainland_graph,
     selected_barriers,
-    base_assignments
+    base_assignments,
+    adjacency = adjacency
   )
 
   # Step 5: Handle non-barrier measurement links (MAINLAND ONLY)
@@ -265,6 +271,8 @@ strategic_network_clustering <- function(data,
 #' @param barriers Character vector of barrier link IDs
 #' @param base_assignments Data frame with columns \code{id} and \code{cluster_id}
 #'   containing base cluster assignments (before boundaries added)
+#' @param adjacency Optional neighbor lookup from \code{link_adjacency()}. Built from
+#'   \code{network_graph} if \code{NULL}; pass it in to avoid rebuilding it.
 #'
 #' @return Data frame with columns:
 #'   \describe{
@@ -294,35 +302,29 @@ strategic_network_clustering <- function(data,
 #' }
 #' @seealso \code{\link{strategic_network_clustering}}, \code{\link{merge_small_clusters}}
 #' @export
-assign_barriers_to_clusters <- function(network_graph, barriers, base_assignments) {
+assign_barriers_to_clusters <- function(network_graph, barriers, base_assignments,
+                                        adjacency = NULL) {
 
+  link_names <- igraph::V(network_graph)$name
+  if (is.null(adjacency)) adjacency <- link_adjacency(network_graph)
+
+  # Cluster of every vertex (NA for barriers and anything not in base_assignments)
+  cluster_of <- rep(NA_integer_, length(link_names))
+  cluster_of[match(base_assignments$id, link_names)] <- base_assignments$cluster_id
+
+  barrier_vid <- match(barriers, link_names)
+  barrier_vid <- unique(barrier_vid[!is.na(barrier_vid)])
+  neighbor_vid <- adjacency[barrier_vid]
+
+  # One row per (barrier, neighbor), then keep each unique (barrier, cluster) pair
   barrier_assignments <- data.frame(
-    id = character(0),
-    cluster_id = integer(0),
+    id = rep(link_names[barrier_vid], lengths(neighbor_vid)),
+    cluster_id = cluster_of[unlist(neighbor_vid, use.names = FALSE)],
     stringsAsFactors = FALSE
   )
-
-  for(barrier in barriers) {
-    if(barrier %in% igraph::V(network_graph)$name) {
-      # Find links that are neighbors of this barrier
-      neighbors <- igraph::neighbors(network_graph, barrier)
-      neighbor_names <- neighbors$name
-
-      # Find which clusters these neighbor links belong to
-      neighbor_clusters <- base_assignments$cluster_id[base_assignments$id %in% neighbor_names]
-      unique_clusters <- unique(neighbor_clusters)
-
-      if(length(unique_clusters) > 0) {
-        # Assign barrier to all neighboring clusters
-        new_assignments <- data.frame(
-          id = rep(barrier, length(unique_clusters)),
-          cluster_id = unique_clusters,
-          stringsAsFactors = FALSE
-        )
-        barrier_assignments <- rbind(barrier_assignments, new_assignments)
-      }
-    }
-  }
+  barrier_assignments <- barrier_assignments[!is.na(barrier_assignments$cluster_id), , drop = FALSE]
+  barrier_assignments <- barrier_assignments[!duplicated(barrier_assignments), , drop = FALSE]
+  rownames(barrier_assignments) <- NULL
 
   return(barrier_assignments)
 }
@@ -389,6 +391,8 @@ assign_measurements_to_clusters <- function(base_assignments, measurement_links)
 #' @param max_size Maximum allowed cluster size after merging. Prevents creating
 #'   clusters that are too large. Default is 1000.
 #'
+#' @param adjacency Optional neighbor lookup from \code{link_adjacency()}. Built from
+#'   \code{network_graph} if \code{NULL}; pass it in to avoid rebuilding it.
 #' @return Data frame with same structure as \code{base_assignments} but with
 #'   updated cluster IDs after merging
 #'
@@ -433,81 +437,59 @@ assign_measurements_to_clusters <- function(base_assignments, measurement_links)
 #' @seealso \code{\link{find_neighboring_clusters}}, \code{\link{strategic_network_clustering}}
 #' @export
 merge_small_clusters <- function(base_assignments, network_graph, barrier_links,
-                                 min_size = 100, max_size = 1000) {
+                                 min_size = 100, max_size = 1000, adjacency = NULL) {
 
-  # Calculate current cluster sizes
-  cluster_sizes <- base_assignments |>
-    dplyr::count(cluster_id, name = "size")
+  link_names <- igraph::V(network_graph)$name
+  if (is.null(adjacency)) adjacency <- link_adjacency(network_graph)
+  is_barrier <- link_names %in% barrier_links
 
-  # Identify small clusters that need merging
-  small_clusters <- cluster_sizes |>
-    dplyr::filter(size < min_size) |>
-    dplyr::arrange(size) |>  # Process smallest first
-    dplyr::pull(cluster_id)
+  # Work with integer vertex ids and a cluster lookup that is updated in place,
+  # instead of scanning the assignments data frame for every link
+  vid <- match(base_assignments$id, link_names)
+  cluster_of <- rep(NA_integer_, length(link_names))
+  cluster_of[vid] <- base_assignments$cluster_id
 
-  # Track which clusters have been merged
-  assignments <- base_assignments
-  merged_count <- 0
-  unable_to_merge <- 0
+  members <- split(vid, base_assignments$cluster_id)  # vertex ids per cluster
+  sizes <- lengths(members)                           # named by cluster id
 
-  for(small_cluster_id in small_clusters) {
-    # Get current cluster assignment (might have changed due to previous merges)
-    current_cluster_id <- assignments$cluster_id[assignments$cluster_id == small_cluster_id][1]
+  # Small clusters, smallest first (ties: lowest cluster id first)
+  small <- which(sizes < min_size)
+  small <- names(small[order(sizes[small])])
+
+  for(small_id in small) {
+    cluster_vids <- members[[small_id]]
 
     # Skip if this cluster was already merged into another
-    if(is.na(current_cluster_id)) next
+    if(is.null(cluster_vids)) next
 
-    # Get all links in this small cluster
-    cluster_links <- assignments$id[assignments$cluster_id == current_cluster_id]
-    current_size <- length(cluster_links)
+    current_size <- length(cluster_vids)
 
     # Skip if cluster has grown beyond min_size due to merges
     if(current_size >= min_size) next
 
-    # Find neighboring clusters using the original network graph
-    neighbor_clusters <- find_neighboring_clusters(
-      cluster_links,
-      network_graph,
-      assignments,
-      barrier_links
-    )
+    # Find neighboring clusters, looking across barriers
+    neighbor_clusters <- .neighbor_cluster_ids(cluster_vids, adjacency, cluster_of, is_barrier)
+    if(length(neighbor_clusters) == 0) next
 
-    if(length(neighbor_clusters) == 0) {
-      unable_to_merge <- unable_to_merge + 1
-      next
-    }
+    # Keep neighbors where the merged size stays within max_size
+    neighbor_sizes <- sizes[as.character(neighbor_clusters)]
+    valid <- (neighbor_sizes + current_size) <= max_size
+    if(!any(valid)) next
 
-    # Calculate sizes of neighboring clusters
-    neighbor_sizes <- cluster_sizes |>
-      dplyr::filter(cluster_id %in% neighbor_clusters) |>
-      dplyr::mutate(merged_size = size + current_size) |>
-      dplyr::filter(merged_size <= max_size)
-
-    if(nrow(neighbor_sizes) == 0) {
-      # No valid merge targets (all neighbors too large)
-      unable_to_merge <- unable_to_merge + 1
-      next
-    }
-
-    # Pick the smallest valid neighbor to keep sizes balanced
-    target_cluster <- neighbor_sizes |>
-      dplyr::arrange(size) |>
-      dplyr::slice(1) |>
-      dplyr::pull(cluster_id)
+    # Pick the smallest valid neighbor (ties: lowest cluster id)
+    candidates <- neighbor_clusters[valid]
+    target_cluster <- candidates[order(neighbor_sizes[valid], candidates)][1]
+    target_key <- as.character(target_cluster)
 
     # Merge: reassign all links from small cluster to target cluster
-    assignments$cluster_id[assignments$cluster_id == current_cluster_id] <- target_cluster
-
-    # Update cluster sizes for future iterations
-    cluster_sizes$size[cluster_sizes$cluster_id == target_cluster] <-
-      cluster_sizes$size[cluster_sizes$cluster_id == target_cluster] + current_size
-
-    merged_count <- merged_count + 1
+    cluster_of[cluster_vids] <- target_cluster
+    members[[target_key]] <- c(members[[target_key]], cluster_vids)
+    members[[small_id]] <- NULL
+    sizes[target_key] <- sizes[target_key] + current_size
   }
 
-  #if(unable_to_merge > 0) {
-  #  message(paste(unable_to_merge, "small clusters could not be merged (no valid neighbors)\n"))
-  #}
+  assignments <- base_assignments
+  assignments$cluster_id <- cluster_of[vid]
 
   return(assignments)
 }
@@ -522,6 +504,8 @@ merge_small_clusters <- function(base_assignments, network_graph, barrier_links,
 #' @param network_graph An igraph object representing the full link adjacency network
 #' @param base_assignments Data frame with columns \code{id} and \code{cluster_id}
 #' @param barrier_links Character vector of barrier link IDs
+#' @param adjacency Optional neighbor lookup from \code{link_adjacency()}. Built from
+#'   \code{network_graph} if \code{NULL}; pass it in to avoid rebuilding it.
 #'
 #' @return Integer vector of unique neighboring cluster IDs (excluding the
 #'   cluster itself)
@@ -565,42 +549,62 @@ merge_small_clusters <- function(base_assignments, network_graph, barrier_links,
 #' @seealso \code{\link{merge_small_clusters}}
 #' @export
 find_neighboring_clusters <- function(cluster_links, network_graph,
-                                      base_assignments, barrier_links) {
+                                      base_assignments, barrier_links,
+                                      adjacency = NULL) {
 
-  neighbor_clusters <- c()
+  link_names <- igraph::V(network_graph)$name
+  if (is.null(adjacency)) adjacency <- link_adjacency(network_graph)
 
-  for(link in cluster_links) {
-    if(link %in% igraph::V(network_graph)$name) {
-      # Find all neighbors in the original network
-      neighbors <- igraph::neighbors(network_graph, link)
-      neighbor_names <- neighbors$name
+  cluster_of <- rep(NA_integer_, length(link_names))
+  cluster_of[match(base_assignments$id, link_names)] <- base_assignments$cluster_id
+  is_barrier <- link_names %in% barrier_links
 
-      # Check both direct non-barrier neighbors AND neighbors across barriers
-      for(neighbor in neighbor_names) {
-        if(neighbor %in% barrier_links) {
-          # This is a barrier - look at its neighbors to find clusters on the other side
-          barrier_neighbors <- igraph::neighbors(network_graph, neighbor)$name
-          # Exclude other barriers and the current cluster's links
-          non_barrier_neighbors <- setdiff(barrier_neighbors, barrier_links)
-          non_barrier_neighbors <- setdiff(non_barrier_neighbors, cluster_links)
+  cluster_vids <- match(cluster_links, link_names)
+  cluster_vids <- cluster_vids[!is.na(cluster_vids)]
 
-          # Find which clusters these belong to
-          neighbor_cluster_ids <- base_assignments$cluster_id[base_assignments$id %in% non_barrier_neighbors]
-          neighbor_clusters <- c(neighbor_clusters, neighbor_cluster_ids)
+  return(.neighbor_cluster_ids(cluster_vids, adjacency, cluster_of, is_barrier))
+}
 
-        } else if(neighbor %in% base_assignments$id) {
-          # This is a direct non-barrier neighbor
-          neighbor_cluster_id <- base_assignments$cluster_id[base_assignments$id == neighbor]
-          neighbor_clusters <- c(neighbor_clusters, neighbor_cluster_id)
-        }
-      }
-    }
-  }
+#' Build a neighbor lookup for the link adjacency graph
+#'
+#' @param network_graph An igraph object with links as vertices.
+#' @return A list with one element per vertex (in vertex order), each an integer
+#'   vector of neighboring vertex ids.
+#' @noRd
+link_adjacency <- function(network_graph) {
+  edges <- igraph::as_edgelist(network_graph, names = FALSE)
+  from <- c(edges[, 1], edges[, 2])
+  to <- c(edges[, 2], edges[, 1])
+  split(as.integer(to), factor(from, levels = seq_len(igraph::vcount(network_graph))))
+}
 
-  # Return unique neighboring cluster IDs (excluding the cluster itself)
-  current_cluster <- base_assignments$cluster_id[base_assignments$id == cluster_links[1]]
-  unique_neighbors <- unique(neighbor_clusters)
-  unique_neighbors <- unique_neighbors[unique_neighbors != current_cluster]
+#' Neighboring cluster ids across barriers, using integer vertex ids
+#'
+#' Workhorse behind \code{find_neighboring_clusters} and \code{merge_small_clusters}.
+#'
+#' @param cluster_vids Integer vertex ids of the links in the cluster.
+#' @param adjacency Output of \code{link_adjacency}.
+#' @param cluster_of Integer vector (one per vertex) with the current cluster id,
+#'   NA for barriers.
+#' @param is_barrier Logical vector (one per vertex).
+#' @return Integer vector of unique neighboring cluster ids, excluding the cluster itself.
+#' @noRd
+.neighbor_cluster_ids <- function(cluster_vids, adjacency, cluster_of, is_barrier) {
 
-  return(unique_neighbors)
+  if(length(cluster_vids) == 0) return(integer(0))
+
+  neighbors <- unique(unlist(adjacency[cluster_vids], use.names = FALSE))
+  neighbor_is_barrier <- is_barrier[neighbors]
+
+  # Direct non-barrier neighbors
+  direct <- neighbors[!neighbor_is_barrier]
+
+  # Non-barrier neighbors on the other side of adjacent barriers
+  across <- unique(unlist(adjacency[neighbors[neighbor_is_barrier]], use.names = FALSE))
+  across <- setdiff(across[!is_barrier[across]], cluster_vids)
+
+  neighbor_clusters <- unique(cluster_of[c(direct, across)])
+  neighbor_clusters <- neighbor_clusters[!is.na(neighbor_clusters)]
+
+  neighbor_clusters[neighbor_clusters != cluster_of[cluster_vids[1]]]
 }

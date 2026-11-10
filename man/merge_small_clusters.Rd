@@ -9,7 +9,8 @@ merge_small_clusters(
   network_graph,
   barrier_links,
   min_size = 100,
-  max_size = 1000
+  max_size = 1000,
+  adjacency = NULL
 )
 }
 \arguments{
@@ -26,6 +27,9 @@ for merging. Default is 100.}
 
 \item{max_size}{Maximum allowed cluster size after merging. Prevents creating
 clusters that are too large. Default is 1000.}
+
+\item{adjacency}{Optional neighbor lookup from \code{link_adjacency()}. Built from
+\code{network_graph} if \code{NULL}; pass it in to avoid rebuilding it.}
 }
 \value{
 Data frame with same structure as \code{base_assignments} but with

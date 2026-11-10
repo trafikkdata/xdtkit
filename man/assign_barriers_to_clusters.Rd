@@ -4,7 +4,12 @@
 \alias{assign_barriers_to_clusters}
 \title{Assign barrier links to all neighboring clusters}
 \usage{
-assign_barriers_to_clusters(network_graph, barriers, base_assignments)
+assign_barriers_to_clusters(
+  network_graph,
+  barriers,
+  base_assignments,
+  adjacency = NULL
+)
 }
 \arguments{
 \item{network_graph}{An igraph object representing the link adjacency network}
@@ -13,6 +18,9 @@ assign_barriers_to_clusters(network_graph, barriers, base_assignments)
 
 \item{base_assignments}{Data frame with columns \code{id} and \code{cluster_id}
 containing base cluster assignments (before boundaries added)}
+
+\item{adjacency}{Optional neighbor lookup from \code{link_adjacency()}. Built from
+\code{network_graph} if \code{NULL}; pass it in to avoid rebuilding it.}
 }
 \value{
 Data frame with columns:

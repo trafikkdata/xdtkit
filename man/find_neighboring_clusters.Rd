@@ -8,7 +8,8 @@ find_neighboring_clusters(
   cluster_links,
   network_graph,
   base_assignments,
-  barrier_links
+  barrier_links,
+  adjacency = NULL
 )
 }
 \arguments{
@@ -19,6 +20,9 @@ find_neighboring_clusters(
 \item{base_assignments}{Data frame with columns \code{id} and \code{cluster_id}}
 
 \item{barrier_links}{Character vector of barrier link IDs}
+
+\item{adjacency}{Optional neighbor lookup from \code{link_adjacency()}. Built from
+\code{network_graph} if \code{NULL}; pass it in to avoid rebuilding it.}
 }
 \value{
 Integer vector of unique neighboring cluster IDs (excluding the
