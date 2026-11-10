@@ -43,18 +43,13 @@ adjacency_matrix <- build_adjacency_matrix(prepared_traffic_links,
 clusters <- strategic_network_clustering(
   data = prepared_traffic_links,
   boundary_links = c("Trafikkdata_continuous", "AutoPASS", "Trafikkdata_periodic"),
-  extra_boundary_links = c("0.47813092@181362-0.69434556@181186", # TL vest for Oslo
-                           "0.64310018@971787-0.44481682@971788",# TL'er øst for Oslo
-                           "0.59497974@971566-0.82908906@444258",
-                           "0.31944922@443497-0.40997724@971559",
-                           "0.51111532@971558-0.31944922@443497",
-                           "0.78140309@971504-0.63295502@443465",
-                           "0.65120232-0.91722091@705187", # TL'er nord-øst for Oslo
-                           "0.69089123@704623-0.49119695@705214",
-                           "0.0@2472765-0.55746674@2472766", # Tl'er nord for Oslo
-                           "0.9628257@1060294-0.68755836@1060295"
-                           ),
   year = year)
+
+clusters_new <- strategic_network_clustering(
+  data = prepared_traffic_links,
+  boundary_links = c("Trafikkdata_continuous", "AutoPASS", "Trafikkdata_periodic"),
+  year = year)
+
 
 data_with_clusters <- dplyr::left_join(prepared_traffic_links, clusters,
                                        by = dplyr::join_by(parentTrafficLinkId == id))
